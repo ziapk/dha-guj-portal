@@ -367,6 +367,8 @@ export type WantedPost = {
   description: string;
   status: "active" | "closed";
   is_open: boolean;
+  /** Open and approved by an admin; sellers only ever receive live requirements. */
+  is_live: boolean;
   is_unlocked?: boolean;
   unlocks_count?: number;
   contact: { name: string; phone: string; email: string | null } | null;
