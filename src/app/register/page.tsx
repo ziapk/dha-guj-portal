@@ -1,6 +1,6 @@
 "use client";
 
-import { BankOutlined, LockOutlined, MailOutlined, PhoneOutlined, UserOutlined } from "@ant-design/icons";
+import { ApartmentOutlined, BankOutlined, LockOutlined, MailOutlined, PhoneOutlined, UserOutlined } from "@ant-design/icons";
 import { Alert, Button, Col, Form, Input, Row, Segmented, Typography } from "antd";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,7 +8,7 @@ import { useState } from "react";
 import { AuthLayout } from "@/components/auth-layout";
 
 type RegisterValues = {
-  account_type: "individual" | "agency";
+  account_type: "individual" | "agency" | "developer";
   name: string;
   email?: string;
   phone?: string;
@@ -67,11 +67,15 @@ export default function RegisterPage() {
             options={[
               { value: "individual", label: "Property owner", icon: <UserOutlined /> },
               { value: "agency", label: "Real estate agency", icon: <BankOutlined /> },
+              { value: "developer", label: "Builder / developer", icon: <ApartmentOutlined /> },
             ]}
           />
         </Form.Item>
-        <Form.Item name="name" label={accountType === "agency" ? "Agency name" : "Full name"} rules={[{ required: true }]}>
-          <Input prefix={accountType === "agency" ? <BankOutlined /> : <UserOutlined />} autoComplete="name" />
+        {accountType === "developer" && (
+          <Alert type="info" showIcon style={{ marginBottom: 16 }} title="Post housing projects with unit types, prices and payment plans. Buyers' inquiries arrive in your Leads inbox." />
+        )}
+        <Form.Item name="name" label={accountType === "agency" ? "Agency name" : accountType === "developer" ? "Company name" : "Full name"} rules={[{ required: true }]}>
+          <Input prefix={accountType === "agency" ? <BankOutlined /> : accountType === "developer" ? <ApartmentOutlined /> : <UserOutlined />} autoComplete="name" />
         </Form.Item>
         <Row gutter={12}>
           <Col xs={24} sm={12}>

@@ -5,11 +5,13 @@ import type {
   BannerPlacement,
   BannerStatus,
   AccountType,
+  ConstructionStatus,
   AreaUnit,
   FurnishedStatus,
   LeadStatus,
   OrderStatus,
   PaymentStatus,
+  ProjectStatus,
   OfferAudience,
   OfferStatus,
   OfferVisibility,
@@ -41,6 +43,7 @@ export const OFFER_AUDIENCE_LABELS: Record<OfferAudience, string> = {
   individual: "Individuals",
   agency: "Agencies",
   both: "Individuals & agencies",
+  developer: "Developers",
 };
 
 export const OFFER_STATUS_LABELS: Record<OfferStatus, string> = {
@@ -64,6 +67,7 @@ export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
   individual: "Individual",
   agency: "Agency",
   agent: "Agent",
+  developer: "Developer",
 };
 
 export const ACCOUNT_STATUS_COLORS: Record<AccountStatus, string> = {
@@ -276,4 +280,43 @@ export function formatPriceRange(min: string | number | null | undefined, max: s
   }
 
   return hasMin ? `From ${formatCompactPrice(min)}` : "Any budget";
+}
+
+export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
+  draft: "Draft",
+  pending: "Under review",
+  published: "Live",
+  rejected: "Rejected",
+  changes_requested: "Changes requested",
+  expired: "Expired",
+};
+
+export const PROJECT_STATUS_COLORS: Record<ProjectStatus, string> = {
+  draft: "default",
+  pending: "gold",
+  published: "green",
+  rejected: "red",
+  changes_requested: "orange",
+  expired: "default",
+};
+
+export const CONSTRUCTION_STATUS_LABELS: Record<ConstructionStatus, string> = {
+  upcoming: "Upcoming",
+  under_construction: "Under construction",
+  ready: "Ready to move",
+};
+
+export const CONSTRUCTION_STATUS_COLORS: Record<ConstructionStatus, string> = {
+  upcoming: "blue",
+  under_construction: "orange",
+  ready: "green",
+};
+
+/** A project's unit price range: "Rs 45 Lakh – Rs 1.2 Crore", "Rs 45 Lakh" when all units cost the same, or "No prices yet". */
+export function formatProjectPrice(from: number | null | undefined, to: number | null | undefined): string {
+  if (from === null || from === undefined) {
+    return "No prices yet";
+  }
+
+  return to === null || to === undefined || Number(to) === Number(from) ? formatCompactPrice(from) : `${formatCompactPrice(from)} – ${formatCompactPrice(to)}`;
 }

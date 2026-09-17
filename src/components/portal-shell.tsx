@@ -133,6 +133,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
 
   const current = findNavItem(pathname);
   const accountLabel = me ? (me.agency ? `Agent · ${me.agency.name}` : ACCOUNT_TYPE_LABELS[me.account_type]) : "Account";
+  const isDeveloper = me?.account_type === "developer";
   const visibleGroups = useMemo(() => navGroupsFor(me?.account_type), [me?.account_type]);
 
   const menuItems = visibleGroups.map((group) => ({
@@ -247,9 +248,9 @@ export function PortalShell({ children }: { children: ReactNode }) {
           )}
 
           {screens.sm && (
-            <Link href="/listings/new">
+            <Link href={isDeveloper ? "/projects/new" : "/listings/new"}>
               <Button type="primary" icon={<PlusOutlined />}>
-                {screens.md ? "Add listing" : null}
+                {screens.md ? (isDeveloper ? "Add project" : "Add listing") : null}
               </Button>
             </Link>
           )}

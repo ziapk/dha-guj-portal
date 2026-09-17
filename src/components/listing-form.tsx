@@ -142,7 +142,7 @@ export function formValuesToPayload(values: ListingFormValues): Record<string, u
   return payload;
 }
 
-function Section({ title, extra, children }: { title: string; extra?: ReactNode; children: ReactNode }) {
+export function Section({ title, extra, children }: { title: string; extra?: ReactNode; children: ReactNode }) {
   return (
     <Card title={title} extra={extra} style={{ marginBottom: 16 }}>
       {children}
@@ -154,7 +154,7 @@ function Section({ title, extra, children }: { title: string; extra?: ReactNode;
  * A phase or block name: a searchable list when master data exists, otherwise free text.
  * The saved value is always the name, and a stored name that is no longer in the list still shows.
  */
-function NameChoice({
+export function NameChoice({
   names,
   loading,
   placeholder,
@@ -202,8 +202,8 @@ function NameChoice({
   );
 }
 
-const withCommas = (value: number | string | undefined) => `${value ?? ""}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-const withoutCommas = (value: string | undefined) => Number((value ?? "").replace(/,/g, ""));
+export const withCommas = (value: number | string | undefined) => `${value ?? ""}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+export const withoutCommas = (value: string | undefined) => Number((value ?? "").replace(/,/g, ""));
 
 export function ListingForm({
   form,

@@ -213,7 +213,7 @@ export default function BuyerRequirementsPage() {
       content: (
         <>
           This uses 1 Lead Access credit{creditsLeft === null ? "" : ` — you have ${creditsLeft} left`}
-          {isAgent ? " on your agency's plan" : ""}. The contact then stays visible to {me && me.account_type !== "individual" ? "everyone in your agency" : "you"} at no extra cost.
+          {isAgent ? " on your agency's plan" : ""}. The contact then stays visible to {me && (me.account_type === "agency" || me.account_type === "agent") ? "everyone in your agency" : "you"} at no extra cost.
         </>
       ),
       okText: "Unlock contact",

@@ -1,5 +1,6 @@
 import {
   AreaChartOutlined,
+  ApartmentOutlined,
   CreditCardOutlined,
   CrownOutlined,
   DashboardOutlined,
@@ -36,6 +37,13 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    title: "Projects",
+    items: [
+      { href: "/projects", label: "Projects", icon: <ApartmentOutlined />, keywords: "developer builder housing scheme units payment plan", accountTypes: ["developer"] },
+      { href: "/projects/new", label: "Add Project", icon: <PlusCircleOutlined />, keywords: "post create developer builder housing scheme new", accountTypes: ["developer"] },
+    ],
+  },
+  {
     title: "Buyers",
     items: [
       { href: "/leads", label: "Leads", icon: <MessageOutlined />, keywords: "inquiries messages buyers tenants assign export csv" },
@@ -50,7 +58,7 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Banner Ads",
         icon: <NotificationOutlined />,
         keywords: "advertise advertising banner promotion marketing",
-        accountTypes: ["individual", "agency"],
+        accountTypes: ["individual", "agency", "developer"],
       },
     ],
   },
@@ -66,7 +74,7 @@ export const NAV_GROUPS: NavGroup[] = [
     title: "Plan",
     items: [
       { href: "/plan", label: "Plan & Quota", icon: <CrownOutlined />, keywords: "subscription credits upgrade offers" },
-      { href: "/orders", label: "Billing", icon: <CreditCardOutlined />, keywords: "orders payments receipts bank transfer", accountTypes: ["individual", "agency"] },
+      { href: "/orders", label: "Billing", icon: <CreditCardOutlined />, keywords: "orders payments receipts bank transfer", accountTypes: ["individual", "agency", "developer"] },
     ],
   },
   {

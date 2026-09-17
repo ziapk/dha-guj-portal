@@ -20,6 +20,9 @@ import type { AgentsResponse, Lead, LeadStatus, Paginated, Resource } from "@/ty
 
 dayjs.extend(relativeTime);
 
+/** What the buyer asked about: a listing's title or a project's name (a lead has one or the other). */
+const leadSubject = (lead: Lead) => lead.property?.title ?? lead.project?.name ?? null;
+
 const TABS: { key: LeadStatus | "all"; label: string }[] = [
   { key: "new", label: "New" },
   { key: "contacted", label: "Contacted" },
@@ -75,14 +78,14 @@ function LeadDrawer({ lead, team, onClose }: { lead: Lead | null; /** Agency onl
             <Button
               icon={<WhatsAppOutlined />}
               style={{ background: "#25d366", borderColor: "#25d366", color: "#fff" }}
-              href={`https://wa.me/${whatsappNumber(lead.phone)}?text=${encodeURIComponent(`Hi ${lead.name}, thanks for your inquiry about "${lead.property?.title ?? "my listing"}".`)}`}
+              href={`https://wa.me/${whatsappNumber(lead.phone)}?text=${encodeURIComponent(`Hi ${lead.name}, thanks for your inquiry about "${leadSubject(lead) ?? "my listing"}".`)}`}
               target="_blank"
               rel="noopener noreferrer"
             >
               WhatsApp
             </Button>
             {lead.email && (
-              <Button icon={<MailOutlined />} href={`mailto:${lead.email}?subject=${encodeURIComponent(`About ${lead.property?.title ?? "your inquiry"}`)}`}>
+              <Button icon={<MailOutlined />} href={`mailto:${lead.email}?subject=${encodeURIComponent(`About ${leadSubject(lead) ?? "your inquiry"}`)}`}>
                 Email
               </Button>
             )}
@@ -95,6 +98,11 @@ function LeadDrawer({ lead, team, onClose }: { lead: Lead | null; /** Agency onl
           {lead.property && (
             <Typography.Paragraph>
               About: <Link href={`/listings/${lead.property.id}`}>{lead.property.title}</Link>
+            </Typography.Paragraph>
+          )}
+          {lead.project && (
+            <Typography.Paragraph>
+              About project: <Link href={`/projects/${lead.project.id}`}>{lead.project.name}</Link>
             </Typography.Paragraph>
           )}
 
@@ -144,6 +152,7 @@ function LeadsContent() {
   const searchParams = useSearchParams();
   const status = (searchParams.get("status") ?? "new") as LeadStatus | "all";
   const propertyId = searchParams.get("property_id") ?? undefined;
+  const projectId = searchParams.get("project_id") ?? undefined;
   const assigneeId = searchParams.get("assigned_user_id") ?? undefined;
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -153,7 +162,7 @@ function LeadsContent() {
   const { data: me } = useMe();
   const isAgency = me?.account_type === "agency";
 
-  const filters = { status: status === "all" ? undefined : status, property_id: propertyId, assigned_user_id: assigneeId, search };
+  const filters = { status: status === "all" ? undefined : status, property_id: propertyId, project_id: projectId, assigned_user_id: assigneeId, search };
 
   const leads = useQuery({
     queryKey: ["leads", { ...filters, page }],
@@ -199,7 +208,7 @@ function LeadsContent() {
     }
   }
 
-  function go(nextStatus: string, nextPropertyId?: string, nextAssigneeId: string | undefined = assigneeId) {
+  function go(nextStatus: string, nextPropertyId?: string, nextAssigneeId: string | undefined = assigneeId, nextProjectId?: string) {
     const params = new URLSearchParams();
 
     if (nextStatus !== "new") {
@@ -208,6 +217,10 @@ function LeadsContent() {
 
     if (nextPropertyId) {
       params.set("property_id", nextPropertyId);
+    }
+
+    if (nextProjectId) {
+      params.set("project_id", nextProjectId);
     }
 
     if (nextAssigneeId) {
@@ -242,7 +255,24 @@ function LeadsContent() {
         </>
       ),
     },
-    { title: "Listing", render: (_, lead) => <Typography.Text ellipsis style={{ maxWidth: 240 }}>{lead.property?.title}</Typography.Text> },
+    {
+      title: me?.account_type === "developer" ? "Listing / project" : "Listing",
+      render: (_, lead) =>
+        lead.project ? (
+          <Flex align="center" gap={6}>
+            <Tag color="geekblue" style={{ marginInlineEnd: 0 }}>
+              Project
+            </Tag>
+            <Typography.Text ellipsis style={{ maxWidth: 200 }}>
+              {lead.project.name}
+            </Typography.Text>
+          </Flex>
+        ) : (
+          <Typography.Text ellipsis style={{ maxWidth: 240 }}>
+            {lead.property?.title ?? "—"}
+          </Typography.Text>
+        ),
+    },
     ...(isAgency
       ? [
           { title: "Listing by", render: (_: unknown, lead: Lead) => lead.owner?.name ?? "—" },
@@ -265,7 +295,13 @@ function LeadsContent() {
     <>
       <PageHeader
         title="Leads"
-        subtitle={me?.account_type === "agent" ? "Buyers who messaged you about your listings, and leads your agency assigned to you" : "Buyers and tenants who messaged you about your listings"}
+        subtitle={
+          me?.account_type === "agent"
+            ? "Buyers who messaged you about your listings, and leads your agency assigned to you"
+            : me?.account_type === "developer"
+              ? "Buyers who messaged you about your projects and listings"
+              : "Buyers and tenants who messaged you about your listings"
+        }
         extra={
           <Button icon={<DownloadOutlined />} loading={exporting} onClick={() => void exportCsv()}>
             Export CSV
@@ -275,7 +311,7 @@ function LeadsContent() {
 
       <Card>
         <Flex justify="space-between" align="center" gap={12} wrap>
-          <Tabs activeKey={status} items={TABS.map((tab) => ({ key: tab.key, label: tab.label }))} onChange={(key) => go(key, propertyId)} style={{ flex: 1, minWidth: 0 }} />
+          <Tabs activeKey={status} items={TABS.map((tab) => ({ key: tab.key, label: tab.label }))} onChange={(key) => go(key, propertyId, assigneeId, projectId)} style={{ flex: 1, minWidth: 0 }} />
           {team && (
             <Select<number>
               allowClear
@@ -284,7 +320,7 @@ function LeadsContent() {
               style={{ minWidth: 200 }}
               value={assigneeId ? Number(assigneeId) : undefined}
               options={team}
-              onChange={(value) => go(status, propertyId, value ? String(value) : undefined)}
+              onChange={(value) => go(status, propertyId, value ? String(value) : undefined, projectId)}
             />
           )}
           <Input.Search
@@ -301,6 +337,12 @@ function LeadsContent() {
         {propertyId && (
           <Tag closable onClose={() => go(status)} style={{ marginBottom: 12 }}>
             Showing leads for listing #{propertyId}
+          </Tag>
+        )}
+
+        {projectId && (
+          <Tag closable onClose={() => go(status, undefined, assigneeId)} style={{ marginBottom: 12 }}>
+            Showing leads for project #{projectId}
           </Tag>
         )}
 

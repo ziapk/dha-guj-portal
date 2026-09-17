@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ApartmentOutlined,
   ArrowRightOutlined,
   ClockCircleOutlined,
   CrownOutlined,
@@ -24,9 +25,9 @@ import { QuotaCard } from "@/components/quota-card";
 import { useMe } from "@/hooks/use-me";
 import { api } from "@/lib/api-client";
 import { errorMessage } from "@/lib/form-errors";
-import { PROPERTY_STATUS_COLORS, PROPERTY_STATUS_LABELS, formatCompactPrice, formatDate } from "@/lib/labels";
+import { PROJECT_STATUS_COLORS, PROJECT_STATUS_LABELS, PROPERTY_STATUS_COLORS, PROPERTY_STATUS_LABELS, formatCompactPrice, formatDate, formatProjectPrice } from "@/lib/labels";
 import { coverPhoto, thumbnailUrl } from "@/lib/media";
-import type { Paginated, PortalDashboard, Property, PropertyStatus } from "@/types/api";
+import type { Paginated, PortalDashboard, Project, Property, PropertyStatus } from "@/types/api";
 
 /** Order of the status rows; matches the listings tabs. */
 const STATUS_ORDER: PropertyStatus[] = ["published", "pending", "changes_requested", "draft", "rejected", "expired", "sold", "rented"];
@@ -101,6 +102,14 @@ export default function DashboardPage() {
   const loading = dashboard.isLoading;
   const isAgency = me?.account_type === "agency";
   const isAgent = me?.account_type === "agent";
+  const isDeveloper = me?.account_type === "developer";
+
+  // Developers also see their latest projects.
+  const projects = useQuery({
+    queryKey: ["projects", "recent"],
+    queryFn: () => api<Paginated<Project>>("portal/projects", { query: { per_page: 5 } }),
+    enabled: isDeveloper,
+  });
 
   const listingCredits = data?.quotas.find((quota) => quota.code === "LISTING");
   const creditsValue = !listingCredits ? 0 : listingCredits.is_unlimited ? "∞" : (listingCredits.remaining ?? 0);
@@ -115,11 +124,29 @@ export default function DashboardPage() {
             <Typography.Title level={2}>
               {greeting()}, {me?.name.split(" ")[0] ?? "there"} 👋
             </Typography.Title>
-            <p>{isAgency ? "Your whole team's listings, leads and plan credits at a glance." : "Manage your listings and keep an eye on your plan credits."}</p>
+            <p>
+              {isAgency
+                ? "Your whole team's listings, leads and plan credits at a glance."
+                : isDeveloper
+                  ? "Manage your projects and listings and keep an eye on your plan credits."
+                  : "Manage your listings and keep an eye on your plan credits."}
+            </p>
           </div>
           <Flex gap={10} wrap className="hero-actions">
+            {isDeveloper && (
+              <Link href="/projects/new">
+                <Button className="hero-primary" icon={<PlusOutlined />}>
+                  Add project
+                </Button>
+              </Link>
+            )}
+            {isDeveloper && (
+              <Link href="/projects">
+                <Button icon={<ApartmentOutlined />}>My projects</Button>
+              </Link>
+            )}
             <Link href="/listings/new">
-              <Button className="hero-primary" icon={<PlusOutlined />}>
+              <Button className={isDeveloper ? undefined : "hero-primary"} icon={<PlusOutlined />}>
                 Add listing
               </Button>
             </Link>
@@ -308,6 +335,41 @@ export default function DashboardPage() {
           </Row>
         )}
       </Card>
+
+      {isDeveloper && (
+        <Card title="Recent projects" extra={<Link href="/projects">All projects ({projects.data?.meta.total ?? 0})</Link>} style={{ marginTop: 16 }}>
+          {projects.isLoading ? (
+            <Skeleton active />
+          ) : projects.isError ? (
+            <Alert type="error" showIcon title="Could not load your projects" description={errorMessage(projects.error)} />
+          ) : (projects.data?.data ?? []).length === 0 ? (
+            <Empty description="You have no projects yet">
+              <Link href="/projects/new">
+                <Button type="primary" icon={<PlusOutlined />}>
+                  Add your first project
+                </Button>
+              </Link>
+            </Empty>
+          ) : (
+            projects.data?.data.map((project) => (
+              <Link key={project.id} href={`/projects/${project.id}`} className="activity-item" style={{ color: "inherit", alignItems: "center" }}>
+                <Avatar shape="square" size={52} src={project.cover_url ?? undefined} icon={<ApartmentOutlined />} style={{ borderRadius: 10, flex: "none" }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <Typography.Text strong ellipsis style={{ display: "block" }}>
+                    {project.name}
+                  </Typography.Text>
+                  <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+                    {formatProjectPrice(project.price_from, project.price_to)} · {project.city?.name}
+                    {project.society ? `, ${project.society.name}` : ""}
+                    {(project.leads_count ?? 0) > 0 && ` · ${project.leads_count} lead${project.leads_count === 1 ? "" : "s"}`}
+                  </Typography.Text>
+                </div>
+                <Tag color={PROJECT_STATUS_COLORS[project.status]}>{PROJECT_STATUS_LABELS[project.status]}</Tag>
+              </Link>
+            ))
+          )}
+        </Card>
+      )}
 
       <Card title="Recent listings" extra={<Link href="/listings">All listings</Link>} style={{ marginTop: 16 }}>
         {recent.isLoading ? (

@@ -11,10 +11,10 @@ export type Paginated<T> = {
 
 export type QuotaItemType = "credit" | "concurrent" | "per_entity" | "boolean" | "duration";
 export type ResetPeriod = "none" | "monthly" | "yearly";
-export type OfferAudience = "individual" | "agency" | "both";
+export type OfferAudience = "individual" | "agency" | "both" | "developer";
 export type OfferStatus = "active" | "inactive" | "archived";
 export type OfferVisibility = "public" | "hidden";
-export type AccountType = "individual" | "agency" | "agent";
+export type AccountType = "individual" | "agency" | "agent" | "developer";
 export type AccountStatus = "active" | "suspended";
 export type SubscriptionStatus = "pending" | "active" | "expired" | "cancelled" | "suspended";
 export type SubscriptionSource = "purchase" | "admin_assigned" | "free" | "trial";
@@ -26,6 +26,9 @@ export type AreaUnit = "marla" | "kanal" | "sq_ft" | "sq_yd" | "sq_m";
 export type MediaType = "image" | "video";
 export type FurnishedStatus = "unfurnished" | "semi_furnished" | "furnished";
 export type LeadStatus = "new" | "contacted" | "interested" | "closed" | "lost";
+export type ProjectStatus = "draft" | "pending" | "published" | "rejected" | "changes_requested" | "expired";
+export type ConstructionStatus = "upcoming" | "under_construction" | "ready";
+export type ProjectMediaType = "image" | "video" | "brochure";
 
 export type User = {
   id: number;
@@ -190,9 +193,81 @@ export type Property = {
   updated_at: string;
 };
 
+export type ProjectUnit = {
+  id: number;
+  name: string;
+  property_type?: PropertyType | null;
+  property_type_id: number | null;
+  area_size: string | null;
+  area_unit: AreaUnit | null;
+  bedrooms: number | null;
+  price_from: string;
+  price_to: string | null;
+  down_payment: string | null;
+  monthly_installment: string | null;
+  installments_count: number | null;
+  payment_plan: string | null;
+};
+
+export type ProjectMedia = {
+  id: number;
+  type: ProjectMediaType;
+  /** Original upload (photo or PDF brochure) or the video link. */
+  url: string;
+  /** ≈480px WebP for photos; null for videos and brochures. */
+  thumbnail_url: string | null;
+  /** ≈1280px WebP for photos; null for videos and brochures. */
+  medium_url: string | null;
+  original_name: string | null;
+  sort_order: number;
+  is_cover: boolean;
+};
+
+/** A housing project posted by a developer account, with its unit types. */
+export type Project = {
+  id: number;
+  slug: string;
+  name: string;
+  developer_name: string;
+  description: string;
+  construction_status: ConstructionStatus;
+  completion_date: string | null;
+  city?: City;
+  society?: Society | null;
+  city_id: number;
+  society_id: number | null;
+  phase: string | null;
+  address: string | null;
+  latitude: string | null;
+  longitude: string | null;
+  /** Lowest and highest unit price; null when units are not loaded. */
+  price_from: number | null;
+  price_to: number | null;
+  units?: ProjectUnit[];
+  amenities?: Amenity[];
+  media?: ProjectMedia[];
+  cover_url?: string | null;
+  published_at: string | null;
+  views_count: number;
+  status: ProjectStatus;
+  rejection_reason: string | null;
+  contact_name: string | null;
+  contact_phone: string | null;
+  contact_whatsapp: string | null;
+  contact_email: string | null;
+  leads_count?: number;
+  units_count?: number;
+  submitted_at: string | null;
+  expires_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** A lead is about either a listing or a project; the other one is null. */
 export type Lead = {
   id: number;
-  property?: { id: number; title: string; slug: string; status: PropertyStatus };
+  property?: { id: number; title: string; slug: string; status: PropertyStatus; city?: string | null } | null;
+  project?: { id: number; name: string; slug: string; status: ProjectStatus; city?: string | null } | null;
   name: string;
   phone: string;
   email: string | null;

@@ -50,7 +50,7 @@ function ProfileForm({ user }: { user: User }) {
         initialValues={{ name: user.name, email: user.email, phone: user.phone }}
         onFinish={(values) => save.mutate(values)}
       >
-        <Form.Item name="name" label={user.account_type === "agency" ? "Agency name" : "Full name"} rules={[{ required: true, whitespace: true, message: "Enter your name" }, { max: 255 }]}>
+        <Form.Item name="name" label={user.account_type === "agency" ? "Agency name" : user.account_type === "developer" ? "Company name" : "Full name"} rules={[{ required: true, whitespace: true, message: "Enter your name" }, { max: 255 }]}>
           <Input prefix={<UserOutlined />} autoComplete="name" />
         </Form.Item>
         <Row gutter={12}>
