@@ -7,6 +7,7 @@ import {
   FileSearchOutlined,
   FundOutlined,
   HomeOutlined,
+  IdcardOutlined,
   MessageOutlined,
   NotificationOutlined,
   PlusCircleOutlined,
@@ -65,7 +66,8 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     title: "Agency",
     items: [
-      { href: "/agency", label: "Agency Page", icon: <ShopOutlined />, keywords: "profile logo public page verified verification documents", accountTypes: ["agency"] },
+      { href: "/agency", label: "Agency Page", icon: <ShopOutlined />, keywords: "profile logo public page verified verification documents approval", accountTypes: ["agency"] },
+      { href: "/agent-profile", label: "My Agent Page", icon: <IdcardOutlined />, keywords: "profile photo bio expertise social public page approval", accountTypes: ["agent"] },
       { href: "/agents", label: "Agents", icon: <TeamOutlined />, keywords: "team staff seats accounts invite invitation credit limits", accountTypes: ["agency"] },
       { href: "/team-performance", label: "Team Performance", icon: <FundOutlined />, keywords: "agents compare leaderboard report deals", accountTypes: ["agency"] },
     ],

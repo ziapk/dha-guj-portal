@@ -29,6 +29,7 @@ import type {
   Amenity,
   AreaUnit,
   Block,
+  Sector,
   City,
   Collection,
   FurnishedStatus,
@@ -57,6 +58,7 @@ export type ListingFormValues = {
   city_id?: number;
   society_id?: number | null;
   phase?: string | null;
+  sector?: string | null;
   block?: string | null;
   address?: string | null;
   bedrooms?: number | null;
@@ -100,6 +102,7 @@ export function propertyToFormValues(property: Property): ListingFormValues {
     city_id: property.city?.id,
     society_id: property.society?.id ?? null,
     phase: property.phase,
+    sector: property.sector,
     block: property.block,
     address: property.address,
     bedrooms: property.bedrooms,
@@ -151,7 +154,7 @@ export function Section({ title, extra, children }: { title: string; extra?: Rea
 }
 
 /**
- * A phase or block name: a searchable list when master data exists, otherwise free text.
+ * A phase or sector name: a searchable list when master data exists, otherwise free text.
  * The saved value is always the name, and a stored name that is no longer in the list still shows.
  */
 export function NameChoice({
@@ -218,6 +221,7 @@ export function ListingForm({
   const cityId = Form.useWatch("city_id", form);
   const societyId = Form.useWatch("society_id", form);
   const phaseName = Form.useWatch("phase", form);
+  const sectorName = Form.useWatch("sector", form);
   const price = Form.useWatch("price", form);
   const installments = Form.useWatch("installment_available", form);
 
@@ -243,12 +247,20 @@ export function ListingForm({
     enabled: Boolean(societyId),
     staleTime: Infinity,
   });
-  // Listings store the phase name, so find the chosen phase's id to load its blocks.
+  // Listings store the phase name, so find the chosen phase's id to load its sectors.
   const phaseId = phases.data?.find((phase) => phase.name === phaseName)?.id;
-  const blocks = useQuery({
-    queryKey: ["master", "blocks", phaseId],
-    queryFn: () => api<Collection<Block>>("public/blocks", { query: { phase_id: phaseId } }).then((response) => response.data),
+  const sectors = useQuery({
+    queryKey: ["master", "sectors", phaseId],
+    queryFn: () => api<Collection<Sector>>("public/sectors", { query: { phase_id: phaseId } }).then((response) => response.data),
     enabled: Boolean(phaseId),
+    staleTime: Infinity,
+  });
+  // Same for the sector: its name identifies the record whose blocks we load.
+  const sectorId = sectors.data?.find((sector) => sector.name === sectorName)?.id;
+  const blocks = useQuery({
+    queryKey: ["master", "blocks", sectorId],
+    queryFn: () => api<Collection<Block>>("public/blocks", { query: { sector_id: sectorId } }).then((response) => response.data),
+    enabled: Boolean(sectorId),
     staleTime: Infinity,
   });
   const amenities = useQuery({
@@ -312,7 +324,7 @@ export function ListingForm({
                     optionFilterProp="label"
                     loading={cities.isLoading}
                     options={(cities.data ?? []).map((city) => ({ value: city.id, label: city.name }))}
-                    onChange={() => form.setFieldsValue({ society_id: undefined, phase: undefined, block: undefined })}
+                    onChange={() => form.setFieldsValue({ society_id: undefined, phase: undefined, sector: undefined, block: undefined })}
                   />
                 </Form.Item>
               </Col>
@@ -326,23 +338,33 @@ export function ListingForm({
                     placeholder={cityId ? "Choose a society" : "Choose a city first"}
                     loading={societies.isFetching}
                     options={(societies.data ?? []).map((society) => ({ value: society.id, label: society.name }))}
-                    onChange={() => form.setFieldsValue({ phase: undefined, block: undefined })}
+                    onChange={() => form.setFieldsValue({ phase: undefined, sector: undefined, block: undefined })}
                   />
                 </Form.Item>
               </Col>
-              <Col xs={12} sm={6}>
+              <Col xs={12} sm={8}>
                 <Form.Item name="phase" label="Phase" rules={[{ max: 50, message: "At most 50 characters" }]}>
                   <NameChoice
                     names={societyId ? phases.data : []}
                     loading={Boolean(societyId) && phases.isFetching}
                     placeholder="e.g. Phase 1"
+                    onPick={() => form.setFieldsValue({ sector: undefined, block: undefined })}
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={12} sm={8}>
+                <Form.Item name="sector" label="Sector" rules={[{ max: 50, message: "At most 50 characters" }]}>
+                  <NameChoice
+                    names={phaseId ? sectors.data : []}
+                    loading={Boolean(phaseId) && sectors.isFetching}
+                    placeholder="e.g. Sector K"
                     onPick={() => form.setFieldValue("block", undefined)}
                   />
                 </Form.Item>
               </Col>
-              <Col xs={12} sm={6}>
-                <Form.Item name="block" label="Block / sector" rules={[{ max: 50, message: "At most 50 characters" }]}>
-                  <NameChoice names={phaseId ? blocks.data : []} loading={Boolean(phaseId) && blocks.isFetching} placeholder="e.g. Block A" />
+              <Col xs={12} sm={8}>
+                <Form.Item name="block" label="Block" rules={[{ max: 50, message: "At most 50 characters" }]}>
+                  <NameChoice names={sectorId ? blocks.data : []} loading={Boolean(sectorId) && blocks.isFetching} placeholder="e.g. Block A" />
                 </Form.Item>
               </Col>
               <Col xs={24} sm={12}>

@@ -11,10 +11,12 @@ import type {
   LeadStatus,
   OrderStatus,
   PaymentStatus,
+  ProjectFeatureGroup,
   ProjectStatus,
   OfferAudience,
   OfferStatus,
   OfferVisibility,
+  ProfileStatus,
   PropertyCategory,
   PropertyPurpose,
   PropertyStatus,
@@ -113,6 +115,20 @@ export function formatPrice(value: string | number | null | undefined): string {
 export function formatDate(value: string | null | undefined, withTime = false): string {
   return value ? dayjs(value).format(withTime ? "DD MMM YYYY, HH:mm" : "DD MMM YYYY") : "—";
 }
+
+export const PROFILE_STATUS_LABELS: Record<ProfileStatus, string> = {
+  pending: "Pending review",
+  approved: "Approved",
+  rejected: "Rejected",
+  deactivated: "Deactivated",
+};
+
+export const PROFILE_STATUS_COLORS: Record<ProfileStatus, string> = {
+  pending: "gold",
+  approved: "green",
+  rejected: "red",
+  deactivated: "default",
+};
 
 export const PROPERTY_PURPOSE_LABELS: Record<PropertyPurpose, string> = {
   sale: "For sale",
@@ -289,6 +305,7 @@ export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
   rejected: "Rejected",
   changes_requested: "Changes requested",
   expired: "Expired",
+  archived: "Archived",
 };
 
 export const PROJECT_STATUS_COLORS: Record<ProjectStatus, string> = {
@@ -298,6 +315,20 @@ export const PROJECT_STATUS_COLORS: Record<ProjectStatus, string> = {
   rejected: "red",
   changes_requested: "orange",
   expired: "default",
+  archived: "purple",
+};
+
+/** The grouped feature lists on a project, in the order the form shows them. */
+export const PROJECT_FEATURE_GROUP_LABELS: Record<ProjectFeatureGroup, string> = {
+  main: "Main features",
+  smart_home: "Smart home",
+  security: "Security",
+  sustainability: "Sustainability",
+  energy: "Energy",
+  construction: "Construction",
+  community: "Community",
+  business: "Business & communication",
+  other: "Other facilities",
 };
 
 export const CONSTRUCTION_STATUS_LABELS: Record<ConstructionStatus, string> = {

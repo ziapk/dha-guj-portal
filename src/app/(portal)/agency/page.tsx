@@ -9,6 +9,7 @@ import { AgencyVerification } from "@/components/agency-verification";
 import { PageHeader } from "@/components/page-header";
 import { api, apiUpload } from "@/lib/api-client";
 import { applyFormErrors, errorMessage } from "@/lib/form-errors";
+import { PROFILE_STATUS_COLORS, PROFILE_STATUS_LABELS } from "@/lib/labels";
 import type { AgencyProfile, City, Collection, Resource } from "@/types/api";
 
 type AgencyResponse = Resource<AgencyProfile> & { is_listed: boolean; public_url: string | null };
@@ -161,7 +162,7 @@ function AgencyForm({ response }: { response: AgencyResponse }) {
             </Typography.Paragraph>
           </Card>
 
-          <Card title="Public page">
+          <Card title="Public page" extra={profile.id && <Tag color={PROFILE_STATUS_COLORS[profile.status]}>{PROFILE_STATUS_LABELS[profile.status]}</Tag>}>
             {!profile.id ? (
               <Alert type="info" showIcon title="Not created yet" description="Save your details to create your agency page." />
             ) : response.is_listed ? (
@@ -173,6 +174,18 @@ function AgencyForm({ response }: { response: AgencyResponse }) {
                   </Button>
                 )}
               </Flex>
+            ) : profile.status !== "approved" ? (
+              <Alert
+                type={profile.status === "pending" ? "info" : "warning"}
+                showIcon
+                title={profile.status === "pending" ? "Waiting for admin approval" : `${PROFILE_STATUS_LABELS[profile.status]} — not on the website`}
+                description={
+                  profile.rejection_reason ??
+                  (profile.status === "pending"
+                    ? "An admin checks every new agency page before it appears on the website. You will see it here once it is approved."
+                    : "Contact support if you think this is a mistake.")
+                }
+              />
             ) : (
               <Alert
                 type="warning"

@@ -8,6 +8,8 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: { default: "DHA GUJ Property Portal", template: "%s · DHA GUJ Property Portal" },
   description: "Manage your property listings, plan and quota",
+  // A private app: keep it out of search results wherever it is deployed.
+  robots: { index: false, follow: false, nocache: true, googleBot: { index: false, follow: false, noimageindex: true } },
 };
 
 /** Applies the saved light/dark mode before first paint to avoid a white flash in dark mode. */

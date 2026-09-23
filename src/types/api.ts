@@ -26,7 +26,7 @@ export type AreaUnit = "marla" | "kanal" | "sq_ft" | "sq_yd" | "sq_m";
 export type MediaType = "image" | "video";
 export type FurnishedStatus = "unfurnished" | "semi_furnished" | "furnished";
 export type LeadStatus = "new" | "contacted" | "interested" | "closed" | "lost";
-export type ProjectStatus = "draft" | "pending" | "published" | "rejected" | "changes_requested" | "expired";
+export type ProjectStatus = "draft" | "pending" | "published" | "rejected" | "changes_requested" | "expired" | "archived";
 export type ConstructionStatus = "upcoming" | "under_construction" | "ready";
 export type ProjectMediaType = "image" | "video" | "brochure";
 
@@ -122,7 +122,8 @@ export type Subscription = {
 
 export type City = { id: number; name: string; slug: string };
 export type Phase = { id: number; society_id: number; name: string; slug: string; is_active: boolean; sort_order: number };
-export type Block = { id: number; phase_id: number; name: string; slug: string; is_active: boolean; sort_order: number };
+export type Sector = { id: number; phase_id: number; name: string; slug: string; is_active: boolean; sort_order: number; blocks_count?: number };
+export type Block = { id: number; sector_id: number; name: string; slug: string; is_active: boolean; sort_order: number };
 export type Society = { id: number; city_id: number; name: string; slug: string };
 export type PropertyType = { id: number; category: PropertyCategory; name: string; slug: string };
 export type Amenity = { id: number; name: string; slug: string; icon: string | null };
@@ -159,6 +160,7 @@ export type Property = {
   city?: City;
   society?: Society | null;
   phase: string | null;
+  sector: string | null;
   block: string | null;
   address: string | null;
   latitude: string | null;
@@ -196,17 +198,77 @@ export type Property = {
 export type ProjectUnit = {
   id: number;
   name: string;
-  property_type?: PropertyType | null;
+  property_type?: PropertyType;
   property_type_id: number | null;
   area_size: string | null;
   area_unit: AreaUnit | null;
-  bedrooms: number | null;
   price_from: string;
   price_to: string | null;
+  price_per_sq_ft: string | null;
   down_payment: string | null;
   monthly_installment: string | null;
   installments_count: number | null;
   payment_plan: string | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  drawing_rooms: number | null;
+  lounges: number | null;
+  kitchens: number | null;
+  study_rooms: number | null;
+  store_rooms: number | null;
+  balconies: number | null;
+  terraces: number | null;
+  parking_spaces: number | null;
+  availability: string | null;
+  description: string | null;
+  floor_plan_url: string | null;
+};
+
+/** The grouped feature lists stored on a project. */
+export type ProjectFeatureGroup =
+  | "main" | "smart_home" | "security" | "sustainability" | "energy" | "construction" | "community" | "business" | "other";
+
+export type ProjectFeatures = Partial<Record<ProjectFeatureGroup, string[]>>;
+
+export type ProjectNearbyPlace = {
+  id?: number;
+  name: string;
+  distance: string | number | null;
+  distance_unit: string | null;
+  description: string | null;
+  maps_url: string | null;
+};
+
+export type ProjectPaymentPlan = {
+  id?: number;
+  name: string;
+  unit_type: string | null;
+  total_price: string | null;
+  booking_amount: string | null;
+  down_payment: string | null;
+  monthly_installment: string | null;
+  quarterly_installment: string | null;
+  half_yearly_installment: string | null;
+  possession_payment: string | null;
+  development_charges: string | null;
+  other_charges: string | null;
+  notes: string | null;
+  image_url: string | null;
+  pdf_url: string | null;
+};
+
+export type ProjectFloorPlan = {
+  id?: number;
+  name: string;
+  unit_type: string | null;
+  level: string | null;
+  area_size: string | null;
+  area_unit: AreaUnit | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  image_url: string | null;
+  pdf_url: string | null;
+  description: string | null;
 };
 
 export type ProjectMedia = {
@@ -227,34 +289,90 @@ export type ProjectMedia = {
 export type Project = {
   id: number;
   slug: string;
+
   name: string;
-  developer_name: string;
+  project_type: string | null;
+  short_description: string | null;
   description: string;
-  construction_status: ConstructionStatus;
-  completion_date: string | null;
+  video_url: string | null;
+  virtual_tour_url: string | null;
+
+  developer_name: string;
+  developer_description: string | null;
+  developer_website: string | null;
+  developer_phone?: string | null;
+  developer_email?: string | null;
+  sponsors: string | null;
+  management_company: string | null;
+  architect: string | null;
+  consultant: string | null;
+  construction_company: string | null;
+
   city?: City;
   society?: Society | null;
   city_id: number;
   society_id: number | null;
+  country: string | null;
+  province: string | null;
   phase: string | null;
+  sector: string | null;
+  block: string | null;
+  street: string | null;
   address: string | null;
+  landmark: string | null;
+  maps_url: string | null;
   latitude: string | null;
   longitude: string | null;
-  /** Lowest and highest unit price; null when units are not loaded. */
+  location_description: string | null;
+
+  category: string | null;
+  property_type_ids: number[];
+  total_land_area: string | null;
+  project_size: string | null;
+  buildings_count: number | null;
+  towers_count: number | null;
+  floors_count: number | null;
+  /** Total units in the project, as opposed to the units_count tally of unit types. */
+  units_total: number | null;
+  launch_date: string | null;
+  construction_status: ConstructionStatus;
+  completion_date: string | null;
+  possession_date: string | null;
+  approval_number: string | null;
+
+  /** Lowest and highest price; falls back to the min and max over the unit types. */
   price_from: number | null;
   price_to: number | null;
+  min_unit_size: string | null;
+  max_unit_size: string | null;
+  unit_size_unit: AreaUnit | null;
+  currency: string | null;
+  price_disclaimer: string | null;
+  price_updated_at: string | null;
+
+  features: ProjectFeatures;
   units?: ProjectUnit[];
   amenities?: Amenity[];
+  nearby_places?: ProjectNearbyPlace[];
+  payment_plans?: ProjectPaymentPlan[];
+  floor_plans?: ProjectFloorPlan[];
   media?: ProjectMedia[];
   cover_url?: string | null;
-  published_at: string | null;
-  views_count: number;
-  status: ProjectStatus;
-  rejection_reason: string | null;
+
+  sales_office_name?: string | null;
   contact_name: string | null;
   contact_phone: string | null;
   contact_whatsapp: string | null;
   contact_email: string | null;
+
+  meta_title: string | null;
+  meta_description: string | null;
+
+  published_at: string | null;
+  views_count: number;
+  status: ProjectStatus;
+  rejection_reason: string | null;
+  is_featured: boolean;
   leads_count?: number;
   units_count?: number;
   submitted_at: string | null;
@@ -341,6 +459,9 @@ export type InvoiceSeller = {
 /** An order response with the bank account to pay into (and seller details when viewing one order). */
 export type OrderWithBank = { data: Order; bank_transfer: BankTransferDetails; seller?: InvoiceSeller };
 
+/** Admin review state of a public profile. Only "approved" profiles show on the website. */
+export type ProfileStatus = "pending" | "approved" | "rejected" | "deactivated";
+
 export type AgencyProfile = {
   id: number | null;
   slug: string | null;
@@ -355,6 +476,40 @@ export type AgencyProfile = {
   city?: City | null;
   is_verified: boolean;
   verified_at: string | null;
+  status: ProfileStatus;
+  /** Why an admin rejected or deactivated the page. */
+  rejection_reason: string | null;
+  created_at: string | null;
+};
+
+/** The agent's own public page, separate from their login account. */
+export type AgentProfile = {
+  id: number | null;
+  slug: string | null;
+  name: string;
+  designation: string | null;
+  short_bio: string | null;
+  bio?: string;
+  bio_html?: string;
+  photo_url: string | null;
+  experience_years: number | null;
+  specialisation: string | null;
+  areas_of_expertise: string[];
+  languages: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  email: string | null;
+  facebook: string | null;
+  instagram: string | null;
+  linkedin: string | null;
+  x: string | null;
+  youtube: string | null;
+  tiktok: string | null;
+  website: string | null;
+  city?: City | null;
+  status: ProfileStatus;
+  /** Why an admin rejected or deactivated the page. */
+  rejection_reason: string | null;
   created_at: string | null;
 };
 
