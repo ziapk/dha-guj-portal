@@ -1,8 +1,9 @@
 "use client";
 
-import { CheckCircleFilled, HomeFilled, MoonOutlined, SunOutlined } from "@ant-design/icons";
+import { CheckCircleFilled, MoonOutlined, SunOutlined } from "@ant-design/icons";
 import { Button, Typography } from "antd";
 import type { ReactNode } from "react";
+import { BrandMark } from "@/components/brand-mark";
 import { useThemeSettings } from "@/theme/theme-provider";
 
 const FEATURES = [
@@ -19,9 +20,7 @@ export function AuthLayout({ title, subtitle, children }: { title: string; subti
     <div className="login-shell">
       <section className="login-brand">
         <div className="brand" style={{ padding: 0 }}>
-          <span className="brand-logo" style={{ background: "rgba(255,255,255,0.18)", boxShadow: "none" }}>
-            <HomeFilled />
-          </span>
+          <BrandMark style={{ boxShadow: "none" }} />
           <span>
             <div className="brand-name">DHA GUJ</div>
             <div className="brand-sub" style={{ color: "rgba(255,255,255,0.75)" }}>
@@ -53,9 +52,7 @@ export function AuthLayout({ title, subtitle, children }: { title: string; subti
 
         <div style={{ width: "100%", maxWidth: 420 }}>
           <div className="login-mobile-brand">
-            <span className="brand-logo">
-              <HomeFilled />
-            </span>
+            <BrandMark />
             <Typography.Text strong style={{ fontSize: 16 }}>
               DHA GUJ Property Portal
             </Typography.Text>

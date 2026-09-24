@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button, Card, Checkbox, Col, DatePicker, Empty, Flex, Form, Input, InputNumber, Row, Select, Typography, type FormInstance } from "antd";
 import dayjs, { type Dayjs } from "dayjs";
 import { NameChoice, Section, withCommas, withoutCommas } from "@/components/listing-form";
+import { groupAmenities } from "@/lib/amenities";
 import { api } from "@/lib/api-client";
 import { AREA_UNIT_LABELS, CONSTRUCTION_STATUS_LABELS, PROJECT_FEATURE_GROUP_LABELS, PROPERTY_CATEGORY_LABELS, formatPriceRange, toOptions } from "@/lib/labels";
 import type { Amenity, AreaUnit, City, Collection, ConstructionStatus, Phase, Project, ProjectFeatureGroup, ProjectFeatures, PropertyCategory, PropertyType, Society } from "@/types/api";
@@ -716,13 +717,22 @@ export function ProjectForm({
           <Section title="Amenities">
             <Form.Item name="amenity_ids" noStyle>
               <Checkbox.Group style={{ width: "100%" }}>
-                <Row gutter={[8, 8]}>
-                  {(amenities.data ?? []).map((amenity) => (
-                    <Col key={amenity.id} xs={12} sm={8} xl={12}>
-                      <Checkbox value={amenity.id}>{amenity.name}</Checkbox>
-                    </Col>
-                  ))}
-                </Row>
+                {groupAmenities(amenities.data ?? []).map((block) => (
+                  <div key={block.key} className="amenity-block">
+                    {block.label && (
+                      <Typography.Text type="secondary" strong className="amenity-block-title">
+                        {block.label}
+                      </Typography.Text>
+                    )}
+                    <Row gutter={[8, 8]}>
+                      {block.amenities.map((amenity) => (
+                        <Col key={amenity.id} xs={12} sm={8} xl={12}>
+                          <Checkbox value={amenity.id}>{amenity.name}</Checkbox>
+                        </Col>
+                      ))}
+                    </Row>
+                  </div>
+                ))}
               </Checkbox.Group>
             </Form.Item>
           </Section>

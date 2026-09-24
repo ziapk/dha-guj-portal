@@ -18,6 +18,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Avatar, Badge, Breadcrumb, Button, Drawer, Dropdown, Grid, Layout, Menu, Tooltip } from "antd";
 import dayjs from "dayjs";
 import Link from "next/link";
+import { BrandMark } from "@/components/brand-mark";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { CommandPalette, type PaletteEntry } from "@/components/command-palette";
@@ -42,9 +43,7 @@ function initials(name: string | undefined): string {
 function Brand({ collapsed }: { collapsed: boolean }) {
   return (
     <Link href="/" className={`brand${collapsed ? " collapsed" : ""}`}>
-      <span className="brand-logo">
-        <HomeFilled />
-      </span>
+      <BrandMark />
       {!collapsed && (
         <span>
           <div className="brand-name">DHA GUJ</div>

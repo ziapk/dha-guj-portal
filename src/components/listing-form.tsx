@@ -16,6 +16,7 @@ import {
   type FormInstance,
 } from "antd";
 import type { ReactNode } from "react";
+import { groupAmenities } from "@/lib/amenities";
 import { api } from "@/lib/api-client";
 import {
   AREA_UNIT_LABELS,
@@ -419,13 +420,22 @@ export function ListingForm({
             </Row>
             <Form.Item name="amenity_ids" label="Amenities">
               <Checkbox.Group style={{ width: "100%" }}>
-                <Row gutter={[8, 8]}>
-                  {(amenities.data ?? []).map((amenity) => (
-                    <Col key={amenity.id} xs={12} sm={8} lg={6} xl={8}>
-                      <Checkbox value={amenity.id}>{amenity.name}</Checkbox>
-                    </Col>
-                  ))}
-                </Row>
+                {groupAmenities(amenities.data ?? []).map((block) => (
+                  <div key={block.key} className="amenity-block">
+                    {block.label && (
+                      <Typography.Text type="secondary" strong className="amenity-block-title">
+                        {block.label}
+                      </Typography.Text>
+                    )}
+                    <Row gutter={[8, 8]}>
+                      {block.amenities.map((amenity) => (
+                        <Col key={amenity.id} xs={12} sm={8} lg={6} xl={8}>
+                          <Checkbox value={amenity.id}>{amenity.name}</Checkbox>
+                        </Col>
+                      ))}
+                    </Row>
+                  </div>
+                ))}
               </Checkbox.Group>
             </Form.Item>
           </Section>

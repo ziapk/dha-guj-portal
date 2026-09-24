@@ -126,7 +126,19 @@ export type Sector = { id: number; phase_id: number; name: string; slug: string;
 export type Block = { id: number; sector_id: number; name: string; slug: string; is_active: boolean; sort_order: number };
 export type Society = { id: number; city_id: number; name: string; slug: string };
 export type PropertyType = { id: number; category: PropertyCategory; name: string; slug: string };
-export type Amenity = { id: number; name: string; slug: string; icon: string | null };
+export type AmenityGroup = { id: number; name: string; slug: string; sort_order: number };
+export type AmenityIconType = "none" | "preset" | "custom";
+export type Amenity = {
+  id: number;
+  name: string;
+  slug: string;
+  /** "preset": draw the built-in icon named by `icon`; "custom": show the uploaded `icon_url`; "none": no icon. */
+  icon_type?: AmenityIconType;
+  icon: string | null;
+  icon_url?: string | null;
+  amenity_group_id?: number | null;
+  group?: AmenityGroup | null;
+};
 
 export type PropertyMedia = {
   id: number;

@@ -4,6 +4,7 @@ import { ArrowLeftOutlined, PrinterOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Result, Skeleton } from "antd";
 import Link from "next/link";
+import { BrandMark } from "@/components/brand-mark";
 import { useParams } from "next/navigation";
 import { InvoicePdfButton } from "@/components/invoice-pdf-button";
 import { api } from "@/lib/api-client";
@@ -65,7 +66,7 @@ export default function InvoicePage() {
         <header className="invoice-header">
           <div>
             <div className="invoice-brand">
-              <span className="brand-logo">⌂</span>
+              <BrandMark />
               <strong>{seller?.seller_name}</strong>
             </div>
             <p>
