@@ -33,6 +33,6 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // robots.txt is excluded so crawlers get the "Disallow: /" file instead of a redirect to /login.
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|robots.txt).*)"],
+  // Public assets (/brand/*) load on the logged-out pages; robots.txt is excluded so crawlers get the "Disallow: /" file instead of a redirect to /login.
+  matcher: ["/((?!api|_next/static|_next/image|brand/|favicon.ico|robots.txt).*)"],
 };

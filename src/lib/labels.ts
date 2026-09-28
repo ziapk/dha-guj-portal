@@ -20,6 +20,8 @@ import type {
   PropertyCategory,
   PropertyPurpose,
   PropertyStatus,
+  PropertyAvailability,
+  ListingTab,
   QuotaAction,
   QuotaItemType,
   ResetPeriod,
@@ -143,13 +145,13 @@ export const PROPERTY_CATEGORY_LABELS: Record<PropertyCategory, string> = {
 
 export const PROPERTY_STATUS_LABELS: Record<PropertyStatus, string> = {
   draft: "Draft",
-  pending: "Under review",
-  published: "Live",
+  pending: "Pending",
+  published: "Active",
   rejected: "Rejected",
   changes_requested: "Changes requested",
   expired: "Expired",
-  sold: "Sold",
-  rented: "Rented",
+  inactive: "Inactive",
+  downgraded: "Downgraded",
 };
 
 export const PROPERTY_STATUS_COLORS: Record<PropertyStatus, string> = {
@@ -159,9 +161,34 @@ export const PROPERTY_STATUS_COLORS: Record<PropertyStatus, string> = {
   rejected: "red",
   changes_requested: "orange",
   expired: "default",
+  inactive: "default",
+  downgraded: "magenta",
+};
+
+export const PROPERTY_AVAILABILITY_LABELS: Record<PropertyAvailability, string> = {
+  available: "Available",
+  under_offer: "Under offer",
+  sold: "Sold",
+  rented: "Rented",
+};
+
+export const PROPERTY_AVAILABILITY_COLORS: Record<PropertyAvailability, string> = {
+  available: "green",
+  under_offer: "blue",
   sold: "purple",
   rented: "cyan",
 };
+
+/** Dashboard tabs in display order. */
+export const LISTING_TABS: { key: ListingTab; label: string }[] = [
+  { key: "active", label: "Active" },
+  { key: "pending", label: "Pending" },
+  { key: "rejected", label: "Rejected" },
+  { key: "expired", label: "Expired" },
+  { key: "deleted", label: "Deleted" },
+  { key: "downgraded", label: "Downgraded" },
+  { key: "inactive", label: "Inactive" },
+];
 
 export const AREA_UNIT_LABELS: Record<AreaUnit, string> = {
   marla: "Marla",

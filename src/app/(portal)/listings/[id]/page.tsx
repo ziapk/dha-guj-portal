@@ -56,11 +56,22 @@ function StatusBanner({ property, onResubmit }: { property: Property; onResubmit
         />
       );
     case "published":
+      if (property.property_status === "sold" || property.property_status === "rented") {
+        return (
+          <Alert
+            type="success"
+            showIcon
+            title={`Active · marked as ${property.property_status}${property.closed_at ? ` on ${formatDate(property.closed_at)}` : ""}`}
+            description="Its page stays online with a clear notice and similar listings, but it is out of search and does not use an active slot."
+          />
+        );
+      }
+
       return (
         <Alert
           type="success"
           showIcon
-          title={property.expires_at ? `Live until ${formatDate(property.expires_at)}` : "Live"}
+          title={property.expires_at ? `Active until ${formatDate(property.expires_at)}` : "Active"}
           description={
             <Space size="large" wrap>
               <span>
@@ -106,8 +117,33 @@ function StatusBanner({ property, onResubmit }: { property: Property; onResubmit
           }
         />
       );
+    case "inactive":
+      return (
+        <Alert
+          type="info"
+          showIcon
+          title={property.published_at ? "Inactive — you switched this listing off" : "Inactive"}
+          description={property.published_at ? `It is offline and not using an active slot. Activate it again any time${property.expires_at ? ` before ${formatDate(property.expires_at)}` : ""}.` : undefined}
+        />
+      );
+    case "downgraded":
+      return (
+        <Alert
+          type="warning"
+          showIcon
+          title={`Downgraded${property.downgraded_at ? ` on ${formatDate(property.downgraded_at)}` : ""}`}
+          description={
+            <>
+              <Typography.Paragraph style={{ margin: "0 0 12px" }}>Your plan ended or has no free active slot, so this listing was taken offline. Renew or upgrade your plan, then activate it again.</Typography.Paragraph>
+              <Link href="/plan">
+                <Button type="primary">View plans</Button>
+              </Link>
+            </>
+          }
+        />
+      );
     default:
-      return <Alert type="info" showIcon title={`Marked as ${property.status} on ${formatDate(property.closed_at)}`} />;
+      return <Alert type="info" showIcon title={PROPERTY_STATUS_LABELS[property.status]} />;
   }
 }
 
@@ -221,12 +257,23 @@ export default function ListingDetailPage() {
 
       {property.published_at && <ListingAnalyticsCard propertyId={property.id} />}
 
-      <MediaManager property={property} disabled={locked} />
-
       <Typography.Title level={4} style={{ margin: "24px 0 12px" }}>
         Listing details
       </Typography.Title>
-      <ListingForm form={form} disabled={locked} onFinish={(values) => save.mutate(values)} />
+      <ListingForm
+        form={form}
+        disabled={locked}
+        property={property}
+        media={<MediaManager property={property} disabled={locked} bare />}
+        onFinish={(values) => save.mutate(values)}
+      />
+      {!locked && (
+        <div className="lf-footer">
+          <Button type="primary" size="large" loading={save.isPending} onClick={() => form.submit()}>
+            Save changes
+          </Button>
+        </div>
+      )}
     </>
   );
 }

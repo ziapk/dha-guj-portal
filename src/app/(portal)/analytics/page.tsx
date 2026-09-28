@@ -21,7 +21,7 @@ type Metric = keyof ActivityCounts;
 
 const METRICS: { key: Metric; label: string; icon: ReactNode; color: string }[] = [
   { key: "views", label: "Views", icon: <EyeOutlined />, color: "var(--accent)" },
-  { key: "phone_clicks", label: "Phone clicks", icon: <PhoneOutlined />, color: "#0ea5e9" },
+  { key: "phone_clicks", label: "Phone clicks", icon: <PhoneOutlined />, color: "#1a73e8" },
   { key: "whatsapp_clicks", label: "WhatsApp clicks", icon: <WhatsAppOutlined />, color: "#10b981" },
   { key: "leads", label: "Leads", icon: <MessageOutlined />, color: "#f59e0b" },
 ];

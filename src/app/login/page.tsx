@@ -1,6 +1,6 @@
 "use client";
 
-import { LockOutlined, UserOutlined } from "@ant-design/icons";
+import { ArrowRightOutlined, LockOutlined, UserOutlined } from "@ant-design/icons";
 import { Alert, Button, Form, Input, Typography } from "antd";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -60,14 +60,40 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthLayout title="Welcome back" subtitle="Log in to manage your property listings.">
+    <AuthLayout
+      title="Welcome Back"
+      subtitle="Log in to manage your properties, projects and leads."
+      topAction={
+        <>
+          <Typography.Text type="secondary" className="login-topbar-hint">
+            New to DHA GRW Properties?
+          </Typography.Text>
+          <Link href="/register">
+            <Button color="primary" variant="filled" icon={<ArrowRightOutlined />} iconPlacement="end">
+              Sign up
+            </Button>
+          </Link>
+        </>
+      }
+    >
       <Suspense>
         <ResetNotice />
       </Suspense>
       {error && <Alert type="error" title={error} showIcon style={{ marginBottom: 16 }} />}
 
-      <Form form={form} layout="vertical" size="large" onFinish={onFinish} requiredMark={false}>
-        <Form.Item name="login" label="Email or phone number" rules={[{ required: true, message: "Enter your email or phone number" }]}>
+      <Form
+        form={form}
+        layout="vertical"
+        size="large"
+        onFinish={onFinish}
+        requiredMark={(label, { required }) => (
+          <>
+            {label}
+            {required && <span className="form-required">*</span>}
+          </>
+        )}
+      >
+        <Form.Item name="login" label="Email or Mobile Number" rules={[{ required: true, message: "Enter your email or phone number" }]}>
           <Input prefix={<UserOutlined />} placeholder="you@example.com or 03001234567" autoComplete="username" autoFocus />
         </Form.Item>
         <Form.Item name="password" label="Password" rules={[{ required: true }]} style={{ marginBottom: 8 }}>
@@ -76,13 +102,13 @@ export default function LoginPage() {
         <div style={{ textAlign: "right", marginBottom: 16 }}>
           <Link href="/forgot-password">Forgot password?</Link>
         </div>
-        <Button type="primary" htmlType="submit" block loading={submitting} style={{ marginTop: 8 }}>
-          Log in
+        <Button type="primary" htmlType="submit" block loading={submitting} icon={<ArrowRightOutlined />} iconPlacement="end" style={{ height: 52, fontSize: 17, marginTop: 8 }}>
+          Log In
         </Button>
       </Form>
 
       <Typography.Paragraph type="secondary" style={{ marginTop: 24, textAlign: "center" }}>
-        New here? <Link href="/register">Create a free account</Link>
+        Don&apos;t have an account? <Link href="/register">Create one for free</Link>
       </Typography.Paragraph>
     </AuthLayout>
   );

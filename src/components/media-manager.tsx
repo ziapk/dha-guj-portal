@@ -9,8 +9,8 @@ import { errorMessage } from "@/lib/form-errors";
 import { mediumUrl, thumbnailUrl } from "@/lib/media";
 import type { Property, PropertyMedia, Resource } from "@/types/api";
 
-/** Upload, preview and remove a listing's photos and video links. */
-export function MediaManager({ property, disabled }: { property: Property; disabled: boolean }) {
+/** Upload, preview and remove a listing's photos and video links. `bare` leaves out the card, e.g. inside a form section. */
+export function MediaManager({ property, disabled, bare = false }: { property: Property; disabled: boolean; bare?: boolean }) {
   const { message } = App.useApp();
   const queryClient = useQueryClient();
   const [videoUrl, setVideoUrl] = useState("");
@@ -38,16 +38,8 @@ export function MediaManager({ property, disabled }: { property: Property; disab
     onError: (error) => message.error(errorMessage(error)),
   });
 
-  return (
-    <Card
-      title={
-        <Flex align="center" gap={8}>
-          <PictureOutlined /> Photos & video
-        </Flex>
-      }
-      extra={<Typography.Text type="secondary">{photos.length} photo(s)</Typography.Text>}
-      style={{ marginBottom: 16 }}
-    >
+  const content = (
+    <>
       <Image.PreviewGroup>
         <div className="media-grid">
           {photos.map((photo) => (
@@ -129,6 +121,24 @@ export function MediaManager({ property, disabled }: { property: Property; disab
           style={{ marginTop: 8 }}
         />
       )}
+    </>
+  );
+
+  if (bare) {
+    return <div style={{ marginBottom: 20 }}>{content}</div>;
+  }
+
+  return (
+    <Card
+      title={
+        <Flex align="center" gap={8}>
+          <PictureOutlined /> Photos & video
+        </Flex>
+      }
+      extra={<Typography.Text type="secondary">{photos.length} photo(s)</Typography.Text>}
+      style={{ marginBottom: 16 }}
+    >
+      {content}
     </Card>
   );
 }

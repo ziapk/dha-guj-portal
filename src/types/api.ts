@@ -21,7 +21,36 @@ export type SubscriptionSource = "purchase" | "admin_assigned" | "free" | "trial
 export type QuotaAction = "consume" | "refund" | "adjust" | "reset" | "expire";
 export type PropertyPurpose = "sale" | "rent";
 export type PropertyCategory = "residential" | "plot" | "commercial";
-export type PropertyStatus = "draft" | "pending" | "published" | "rejected" | "changes_requested" | "expired" | "sold" | "rented";
+/** Listing status ("published" is shown as Active). Deleted listings are soft-deleted, not a status. */
+export type PropertyStatus = "draft" | "pending" | "published" | "rejected" | "changes_requested" | "expired" | "inactive" | "downgraded";
+/** Whether the property itself is still on the market; separate from the listing status. */
+export type PropertyAvailability = "available" | "under_offer" | "sold" | "rented";
+/** Dashboard tabs; each groups one or more listing statuses (see API PropertyStatus::tabs()). */
+export type ListingTab = "active" | "pending" | "rejected" | "expired" | "deleted" | "downgraded" | "inactive";
+export type ListingTabCounts = Record<ListingTab, number>;
+
+/** SEO for a listing: the admin's overrides, what would be generated, and what is in effect. */
+export type PropertySeoSettings = {
+  seo_title: string | null;
+  seo_description: string | null;
+  robots_index: "index" | "noindex" | null;
+  robots_follow: "follow" | "nofollow" | null;
+  sitemap: "include" | "exclude" | null;
+  generated_title: string;
+  generated_description: string;
+  generated_slug: string;
+  effective: {
+    http_status: 200 | 301 | 404 | 410;
+    title: string;
+    description: string;
+    path: string;
+    canonical_url: string;
+    index: boolean;
+    follow: boolean;
+    sitemap: boolean;
+    notice: "sold" | "rented" | "expired" | null;
+  };
+};
 export type AreaUnit = "marla" | "kanal" | "sq_ft" | "sq_yd" | "sq_m";
 export type MediaType = "image" | "video";
 export type FurnishedStatus = "unfurnished" | "semi_furnished" | "furnished";
@@ -138,6 +167,8 @@ export type Amenity = {
   icon_url?: string | null;
   amenity_group_id?: number | null;
   group?: AmenityGroup | null;
+  /** Property types the feature applies to; empty means every type. */
+  property_type_ids?: number[];
 };
 
 export type PropertyMedia = {
@@ -157,6 +188,7 @@ export type Property = {
   id: number;
   slug: string;
   status: PropertyStatus;
+  property_status: PropertyAvailability;
   purpose: PropertyPurpose;
   title: string;
   description: string;
@@ -193,11 +225,20 @@ export type Property = {
   featured_until: string | null;
   is_hot?: boolean;
   hot_until?: string | null;
+  is_premium?: boolean;
+  premium_until?: string | null;
+  is_urgent: boolean;
+  /** Permanent public path: /property/{id}/{slug}. */
+  url?: string;
+  public_url?: string;
+  seo?: PropertySeoSettings;
   submitted_at: string | null;
   published_at: string | null;
   expires_at: string | null;
   refreshed_at: string | null;
   closed_at: string | null;
+  downgraded_at?: string | null;
+  deleted_at?: string | null;
   views_count: number;
   phone_clicks: number;
   whatsapp_clicks: number;

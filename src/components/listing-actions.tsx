@@ -1,6 +1,17 @@
 "use client";
 
-import { CheckSquareOutlined, DeleteOutlined, EditOutlined, FireOutlined, MoreOutlined, ReloadOutlined, RocketOutlined, SendOutlined } from "@ant-design/icons";
+import {
+  CheckSquareOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  FireOutlined,
+  MoreOutlined,
+  PauseCircleOutlined,
+  PlayCircleOutlined,
+  ReloadOutlined,
+  RocketOutlined,
+  SendOutlined,
+} from "@ant-design/icons";
 import { Button, Dropdown, type MenuProps } from "antd";
 import dayjs from "dayjs";
 import { useRouter } from "next/navigation";
@@ -25,10 +36,13 @@ export function ListingActions({
   beforeSubmit?: () => Promise<void>;
 }) {
   const router = useRouter();
-  const { submit, feature, makeHot, bump, goBuy, confirmResubmit, confirmRepost, confirmClose, confirmDelete } = useListingActions();
+  const { submit, feature, makeHot, bump, setActive, goBuy, confirmResubmit, confirmRepost, confirmClose, confirmDeactivate, confirmDelete } = useListingActions();
   const quotas = useQuotas();
 
-  const isLive = property.status === "published" && (!property.expires_at || dayjs(property.expires_at).isAfter(dayjs()));
+  const isActive = property.status === "published" && (!property.expires_at || dayjs(property.expires_at).isAfter(dayjs()));
+  // Promotions and refreshes only make sense while the property is still on the market.
+  const isLive = isActive && (property.property_status === "available" || property.property_status === "under_offer");
+  const canReactivate = (property.status === "inactive" || property.status === "downgraded") && Boolean(property.published_at);
   const canSubmit = ["draft", "rejected", "changes_requested", "expired"].includes(property.status);
 
   const listingsLeft = remainingFor(quotas.data, "LISTING");
@@ -86,6 +100,7 @@ export function ListingActions({
           },
         ]
       : []),
+    ...(isActive ? [{ key: "deactivate", icon: <PauseCircleOutlined />, label: "Deactivate", onClick: () => confirmDeactivate(property) }] : []),
   ];
 
   const menuItems: NonNullable<MenuProps["items"]> =
@@ -102,6 +117,16 @@ export function ListingActions({
       {canSubmit && (
         <Button type="primary" icon={<SendOutlined />} loading={submit.isPending && submit.variables?.id === property.id} onClick={() => void onSubmit()}>
           {submitLabel}
+        </Button>
+      )}
+      {canReactivate && (
+        <Button
+          type="primary"
+          icon={<PlayCircleOutlined />}
+          loading={setActive.isPending && setActive.variables?.property.id === property.id}
+          onClick={() => setActive.mutate({ property, active: true })}
+        >
+          Activate
         </Button>
       )}
       {isLive && (

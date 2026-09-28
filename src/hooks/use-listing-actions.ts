@@ -7,7 +7,8 @@ import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 import { ApiError, api } from "@/lib/api-client";
 import { errorMessage } from "@/lib/form-errors";
-import type { Property, Resource } from "@/types/api";
+import { PROPERTY_AVAILABILITY_LABELS } from "@/lib/labels";
+import type { Property, PropertyAvailability, Resource } from "@/types/api";
 
 /** Listing workflow actions with shared success messages, cache refresh and quota error handling. */
 export function useListingActions() {
@@ -86,11 +87,21 @@ export function useListingActions() {
     onError,
   });
 
-  const close = useMutation({
-    mutationFn: ({ property, status }: { property: Property; status: "sold" | "rented" }) =>
-      api<Resource<Property>>(`portal/properties/${property.id}/close`, { method: "POST", body: { status } }),
+  const setPropertyStatus = useMutation({
+    mutationFn: ({ property, status }: { property: Property; status: PropertyAvailability }) =>
+      api<Resource<Property>>(`portal/properties/${property.id}/close`, { method: "POST", body: { property_status: status } }),
     onSuccess: (_, { status }) => {
-      message.success(`Marked as ${status}.`);
+      message.success(`Property marked as ${PROPERTY_AVAILABILITY_LABELS[status].toLowerCase()}.`);
+      invalidate();
+    },
+    onError,
+  });
+
+  const setActive = useMutation({
+    mutationFn: ({ property, active }: { property: Property; active: boolean }) =>
+      api<Resource<Property>>(`portal/properties/${property.id}/active`, { method: "POST", body: { active } }),
+    onSuccess: (_, { active }) => {
+      message.success(active ? "Listing is active again." : "Listing deactivated. Switch it back on any time before it expires.");
       invalidate();
     },
     onError,
@@ -138,10 +149,19 @@ export function useListingActions() {
     const status = property.purpose === "rent" ? "rented" : "sold";
 
     modal.confirm({
-      title: `Mark this listing as ${status}?`,
-      content: "It will be removed from search results.",
+      title: `Mark this property as ${status}?`,
+      content: "The listing stays active and its page stays online with a clear notice, but it leaves search results, frees its active slot and ends any promotion.",
       okText: `Mark as ${status}`,
-      onOk: () => close.mutateAsync({ property, status }),
+      onOk: () => setPropertyStatus.mutateAsync({ property, status }),
+    });
+  }
+
+  function confirmDeactivate(property: Property) {
+    modal.confirm({
+      title: "Deactivate this listing?",
+      content: "It goes offline and frees its active slot. You can switch it back on any time before it expires.",
+      okText: "Deactivate",
+      onOk: () => setActive.mutateAsync({ property, active: false }),
     });
   }
 
@@ -155,5 +175,5 @@ export function useListingActions() {
     });
   }
 
-  return { submit, feature, makeHot, bump, goBuy, confirmResubmit, confirmRepost, confirmClose, confirmDelete };
+  return { submit, feature, makeHot, bump, setActive, setPropertyStatus, goBuy, confirmResubmit, confirmRepost, confirmClose, confirmDeactivate, confirmDelete };
 }

@@ -17,6 +17,7 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Avatar, Badge, Breadcrumb, Button, Drawer, Dropdown, Grid, Layout, Menu, Tooltip } from "antd";
 import dayjs from "dayjs";
+import Image from "next/image";
 import Link from "next/link";
 import { BrandMark } from "@/components/brand-mark";
 import { usePathname, useRouter } from "next/navigation";
@@ -43,11 +44,12 @@ function initials(name: string | undefined): string {
 function Brand({ collapsed }: { collapsed: boolean }) {
   return (
     <Link href="/" className={`brand${collapsed ? " collapsed" : ""}`}>
-      <BrandMark />
-      {!collapsed && (
-        <span>
-          <div className="brand-name">DHA GUJ</div>
-          <div className="brand-sub">Property Portal</div>
+      {collapsed ? (
+        <BrandMark />
+      ) : (
+        <span className="brand-wide">
+          <Image src="/brand/logo-wide.png" alt="DHA Gujranwala Properties" width={515} height={160} priority />
+          <span className="brand-sub">Property Portal</span>
         </span>
       )}
     </Link>
@@ -186,7 +188,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
       <Brand collapsed={compact} />
       <Menu
         className="sidebar-menu"
-        theme="dark"
+        theme={resolvedMode}
         mode="inline"
         selectedKeys={current ? [current.href] : []}
         items={menuItems}
@@ -218,7 +220,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
         placement="left"
         size={264}
         closable={false}
-        styles={{ body: { padding: 0, background: resolvedMode === "dark" ? "#0a0f1c" : "#0f172a" } }}
+        styles={{ body: { padding: 0, background: "var(--sider-bg)" } }}
       >
         {sidebar(false)}
       </Drawer>

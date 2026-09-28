@@ -11,38 +11,54 @@ import { PageHeader } from "@/components/page-header";
 import { useMe } from "@/hooks/use-me";
 import { api } from "@/lib/api-client";
 import { coverPhoto, thumbnailUrl } from "@/lib/media";
-import { PROPERTY_PURPOSE_LABELS, PROPERTY_STATUS_COLORS, PROPERTY_STATUS_LABELS, formatArea, formatCompactPrice, formatDate } from "@/lib/labels";
-import type { AgentsResponse, Paginated, Property, PropertyStatus } from "@/types/api";
-
-const TABS: { key: PropertyStatus | "all"; label: string }[] = [
-  { key: "all", label: "All" },
-  { key: "published", label: "Live" },
-  { key: "pending", label: "Under review" },
-  { key: "changes_requested", label: "Changes requested" },
-  { key: "draft", label: "Drafts" },
-  { key: "rejected", label: "Rejected" },
-  { key: "expired", label: "Expired" },
-  { key: "sold", label: "Sold" },
-  { key: "rented", label: "Rented" },
-];
+import {
+  LISTING_TABS,
+  PROPERTY_AVAILABILITY_COLORS,
+  PROPERTY_AVAILABILITY_LABELS,
+  PROPERTY_PURPOSE_LABELS,
+  PROPERTY_STATUS_COLORS,
+  PROPERTY_STATUS_LABELS,
+  formatArea,
+  formatCompactPrice,
+  formatDate,
+  toOptions,
+} from "@/lib/labels";
+import type { AgentsResponse, ListingTab, ListingTabCounts, Paginated, Property, PropertyAvailability } from "@/types/api";
 
 function ListingCard({ property, showOwner = false }: { property: Property; showOwner?: boolean }) {
   const router = useRouter();
   const cover = coverPhoto(property.media);
+  const deleted = Boolean(property.deleted_at);
 
   return (
     <Card
-      hoverable
+      hoverable={!deleted}
       className="listing-card"
       style={{ height: "100%" }}
-      onClick={() => router.push(`/listings/${property.id}`)}
+      onClick={deleted ? undefined : () => router.push(`/listings/${property.id}`)}
       cover={
         <div className="listing-cover" style={cover ? { backgroundImage: `url("${thumbnailUrl(cover)}")` } : undefined}>
           {!cover && <HomeOutlined />}
           <div className="listing-cover-badges">
-            <Tag color={PROPERTY_STATUS_COLORS[property.status]} variant="solid">
-              {PROPERTY_STATUS_LABELS[property.status]}
-            </Tag>
+            {deleted ? (
+              <Tag color="red" variant="solid">
+                Deleted
+              </Tag>
+            ) : (
+              <Tag color={PROPERTY_STATUS_COLORS[property.status]} variant="solid">
+                {PROPERTY_STATUS_LABELS[property.status]}
+              </Tag>
+            )}
+            {property.property_status !== "available" && (
+              <Tag color={PROPERTY_AVAILABILITY_COLORS[property.property_status]} variant="solid">
+                {PROPERTY_AVAILABILITY_LABELS[property.property_status]}
+              </Tag>
+            )}
+            {property.is_premium && (
+              <Tag color="purple" variant="solid">
+                Premium
+              </Tag>
+            )}
             {property.is_hot && (
               <Tag color="volcano" variant="solid" icon={<FireOutlined />}>
                 Hot
@@ -80,11 +96,15 @@ function ListingCard({ property, showOwner = false }: { property: Property; show
         {(property.leads_count ?? 0) > 0 && <span>💬 {property.leads_count} lead{property.leads_count === 1 ? "" : "s"}</span>}
       </div>
       <Typography.Text type="secondary" style={{ display: "block", fontSize: 12, margin: "8px 0 12px" }}>
-        {property.status === "published" && property.expires_at
-          ? `Live until ${formatDate(property.expires_at)}`
-          : property.status === "pending"
-            ? `Submitted ${formatDate(property.submitted_at)}`
-            : `Updated ${formatDate(property.updated_at)}`}
+        {deleted
+          ? `Deleted ${formatDate(property.deleted_at)}`
+          : property.status === "published" && property.expires_at
+            ? `Active until ${formatDate(property.expires_at)}`
+            : property.status === "pending"
+              ? `Submitted ${formatDate(property.submitted_at)}`
+              : property.status === "downgraded"
+                ? "Taken offline because your plan ended or has no free slot"
+                : `Updated ${formatDate(property.updated_at)}`}
         {property.status === "published" && property.is_hot && property.hot_until && ` · Hot until ${formatDate(property.hot_until)}`}
       </Typography.Text>
       {property.status === "rejected" && property.rejection_reason && (
@@ -99,7 +119,7 @@ function ListingCard({ property, showOwner = false }: { property: Property; show
           style={{ marginBottom: 12 }}
         />
       )}
-      <ListingActions property={property} compact />
+      {!deleted && <ListingActions property={property} compact />}
     </Card>
   );
 }
@@ -107,19 +127,25 @@ function ListingCard({ property, showOwner = false }: { property: Property; show
 function ListingsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const status = (searchParams.get("status") ?? "all") as PropertyStatus | "all";
+  const tab = (LISTING_TABS.some((item) => item.key === searchParams.get("tab")) ? searchParams.get("tab") : "active") as ListingTab;
   const userId = searchParams.get("user_id") ?? undefined;
+  const [propertyStatus, setPropertyStatus] = useState<PropertyAvailability>();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const { data: me } = useMe();
   const isAgency = me?.account_type === "agency";
 
   const listings = useQuery({
-    queryKey: ["listings", { status, search, page, userId }],
+    queryKey: ["listings", { tab, propertyStatus, search, page, userId }],
     queryFn: () =>
       api<Paginated<Property>>("portal/properties", {
-        query: { status: status === "all" ? undefined : status, search, page, per_page: 12, user_id: userId },
+        query: { tab, property_status: propertyStatus, search, page, per_page: 12, user_id: userId },
       }),
+  });
+
+  const counts = useQuery({
+    queryKey: ["listings", "counts", userId],
+    queryFn: () => api<{ data: ListingTabCounts }>("portal/properties/counts", { query: { user_id: userId } }).then((response) => response.data),
   });
 
   const agents = useQuery({
@@ -128,11 +154,11 @@ function ListingsContent() {
     enabled: isAgency,
   });
 
-  function go(nextStatus: string, nextUserId?: string) {
+  function go(nextTab: string, nextUserId?: string) {
     const params = new URLSearchParams();
 
-    if (nextStatus !== "all") {
-      params.set("status", nextStatus);
+    if (nextTab !== "active") {
+      params.set("tab", nextTab);
     }
 
     if (nextUserId) {
@@ -147,7 +173,7 @@ function ListingsContent() {
     <>
       <PageHeader
         title={isAgency ? "Team Listings" : "My Listings"}
-        subtitle={isAgency ? "Listings from your agency and your agents, from drafts to sold" : "Everything you have listed, from drafts to sold"}
+        subtitle={isAgency ? "Listings from your agency and your agents, by listing status" : "Everything you have listed, by listing status"}
         extra={
           <Link href="/listings/new">
             <Button type="primary" icon={<PlusOutlined />}>
@@ -160,10 +186,22 @@ function ListingsContent() {
       <Card styles={{ body: { paddingBottom: 0 } }} style={{ marginBottom: 16 }}>
         <Flex justify="space-between" align="center" gap={12} wrap>
           <Tabs
-            activeKey={status}
-            items={TABS.map((tab) => ({ key: tab.key, label: tab.label }))}
+            activeKey={tab}
+            items={LISTING_TABS.map((item) => ({ key: item.key, label: `${item.label} (${counts.data?.[item.key] ?? 0})` }))}
             onChange={(key) => go(key, userId)}
             style={{ marginBottom: 0, minWidth: 0, flex: 1 }}
+          />
+          <Select<PropertyAvailability>
+            allowClear
+            placeholder="Any property status"
+            aria-label="Filter by property status"
+            style={{ minWidth: 170, marginBottom: 12 }}
+            value={propertyStatus}
+            options={toOptions(PROPERTY_AVAILABILITY_LABELS)}
+            onChange={(value) => {
+              setPropertyStatus(value);
+              setPage(1);
+            }}
           />
           <Input.Search
             placeholder="Search by title"
@@ -185,7 +223,7 @@ function ListingsContent() {
                 ...(me ? [{ value: me.id, label: `${me.name} (agency)` }] : []),
                 ...(agents.data?.data ?? []).map((agent) => ({ value: agent.id, label: agent.name })),
               ]}
-              onChange={(value) => go(status, value ? String(value) : undefined)}
+              onChange={(value) => go(tab, value ? String(value) : undefined)}
             />
           )}
         </Flex>
@@ -195,7 +233,7 @@ function ListingsContent() {
         <Skeleton active />
       ) : (listings.data?.data ?? []).length === 0 ? (
         <Card>
-          <Empty description={status === "all" ? "You have not listed anything yet" : "No listings in this tab"}>
+          <Empty description="No listings in this tab">
             <Link href="/listings/new">
               <Button type="primary" icon={<PlusOutlined />}>
                 Add a listing

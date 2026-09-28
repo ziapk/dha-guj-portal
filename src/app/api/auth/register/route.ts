@@ -2,6 +2,7 @@ import { apiUrl, setToken } from "@/lib/session";
 
 type RegisterBody = {
   name?: string;
+  contact_name?: string;
   account_type?: string;
   email?: string;
   phone?: string;
@@ -18,6 +19,7 @@ export async function POST(request: Request): Promise<Response> {
     headers: { Accept: "application/json", "Content-Type": "application/json" },
     body: JSON.stringify({
       name: body.name,
+      contact_name: body.contact_name || null,
       account_type: body.account_type,
       email: body.email || null,
       phone: body.phone || null,

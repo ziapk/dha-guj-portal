@@ -16,8 +16,9 @@ import {
   WhatsAppOutlined,
 } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Alert, Avatar, Button, Card, Col, Empty, Flex, Row, Skeleton, Statistic, Tag, Typography } from "antd";
+import { Alert, Avatar, Button, Card, Col, Empty, Flex, Grid, Row, Skeleton, Statistic, Tag, Typography } from "antd";
 import dayjs from "dayjs";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
@@ -25,12 +26,10 @@ import { QuotaCard } from "@/components/quota-card";
 import { useMe } from "@/hooks/use-me";
 import { api } from "@/lib/api-client";
 import { errorMessage } from "@/lib/form-errors";
-import { PROJECT_STATUS_COLORS, PROJECT_STATUS_LABELS, PROPERTY_STATUS_COLORS, PROPERTY_STATUS_LABELS, formatCompactPrice, formatDate, formatProjectPrice } from "@/lib/labels";
+import { LISTING_TABS, PROJECT_STATUS_COLORS, PROJECT_STATUS_LABELS, PROPERTY_STATUS_COLORS, PROPERTY_STATUS_LABELS, formatCompactPrice, formatDate, formatProjectPrice } from "@/lib/labels";
 import { coverPhoto, thumbnailUrl } from "@/lib/media";
-import type { Paginated, PortalDashboard, Project, Property, PropertyStatus } from "@/types/api";
+import type { ListingTabCounts, Paginated, PortalDashboard, Project, Property } from "@/types/api";
 
-/** Order of the status rows; matches the listings tabs. */
-const STATUS_ORDER: PropertyStatus[] = ["published", "pending", "changes_requested", "draft", "rejected", "expired", "sold", "rented"];
 
 function greeting(): string {
   const hour = new Date().getHours();
@@ -98,7 +97,12 @@ export default function DashboardPage() {
     queryFn: () => api<Paginated<Property>>("portal/properties", { query: { per_page: 5 } }).then((page) => page.data),
   });
 
+  const screens = Grid.useBreakpoint();
   const data = dashboard.data;
+  const tabCounts = useQuery({
+    queryKey: ["listings", "counts"],
+    queryFn: () => api<{ data: ListingTabCounts }>("portal/properties/counts").then((response) => response.data),
+  });
   const loading = dashboard.isLoading;
   const isAgency = me?.account_type === "agency";
   const isAgent = me?.account_type === "agent";
@@ -121,6 +125,7 @@ export default function DashboardPage() {
       <div className="hero" style={{ marginBottom: 24 }}>
         <Flex justify="space-between" align="center" gap={20} wrap>
           <div>
+            <span className="hero-eyebrow">Welcome back</span>
             <Typography.Title level={2}>
               {greeting()}, {me?.name.split(" ")[0] ?? "there"} 👋
             </Typography.Title>
@@ -132,6 +137,7 @@ export default function DashboardPage() {
                   : "Manage your listings and keep an eye on your plan credits."}
             </p>
           </div>
+          {screens.xl && <Image src="/brand/logo-wide.png" alt="" width={515} height={160} className="hero-logo" priority />}
           <Flex gap={10} wrap className="hero-actions">
             {isDeveloper && (
               <Link href="/projects/new">
@@ -177,13 +183,13 @@ export default function DashboardPage() {
 
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} xl={6}>
-          <KpiCard title="Live listings" value={data?.listings.by_status.published ?? 0} loading={loading} icon={<HomeOutlined />} color="#10b981" href="/listings?status=published" />
+          <KpiCard title="Active listings" value={data?.listings.by_status.published ?? 0} loading={loading} icon={<HomeOutlined />} color="#10b981" href="/listings?tab=active" />
         </Col>
         <Col xs={24} sm={12} xl={6}>
-          <KpiCard title="Under review" value={data?.listings.by_status.pending ?? 0} loading={loading} icon={<ClockCircleOutlined />} color="#f59e0b" href="/listings?status=pending" />
+          <KpiCard title="Pending review" value={data?.listings.by_status.pending ?? 0} loading={loading} icon={<ClockCircleOutlined />} color="#f59e0b" href="/listings?tab=pending" />
         </Col>
         <Col xs={24} sm={12} xl={6}>
-          <KpiCard title="New leads" value={data?.leads.new ?? 0} loading={loading} icon={<MessageOutlined />} color="#0ea5e9" href="/leads" />
+          <KpiCard title="New leads" value={data?.leads.new ?? 0} loading={loading} icon={<MessageOutlined />} color="#1a73e8" href="/leads" />
         </Col>
         <Col xs={24} sm={12} xl={6}>
           <KpiCard title="Listing credits left" value={creditsValue} loading={loading} icon={<ThunderboltOutlined />} color="var(--accent)" href="/plan" />
@@ -198,7 +204,7 @@ export default function DashboardPage() {
           title={`${data?.listings.by_status.changes_requested} listing${data?.listings.by_status.changes_requested === 1 ? " needs" : "s need"} changes before going live`}
           description="Our team left a note on each one. Resubmitting after you make the changes is free."
           action={
-            <Link href="/listings?status=changes_requested">
+            <Link href="/listings?tab=rejected">
               <Button size="small">Review</Button>
             </Link>
           }
@@ -213,13 +219,8 @@ export default function DashboardPage() {
             ) : !data || data.listings.total === 0 ? (
               <Empty description="No listings yet" image={Empty.PRESENTED_IMAGE_SIMPLE} />
             ) : (
-              STATUS_ORDER.map((status) => (
-                <CountRow
-                  key={status}
-                  href={`/listings?status=${status}`}
-                  value={data.listings.by_status[status] ?? 0}
-                  label={<Tag color={PROPERTY_STATUS_COLORS[status]}>{PROPERTY_STATUS_LABELS[status]}</Tag>}
-                />
+              LISTING_TABS.map((tab) => (
+                <CountRow key={tab.key} href={`/listings?tab=${tab.key}`} value={tabCounts.data?.[tab.key] ?? 0} label={tab.label} />
               ))
             )}
           </Card>
