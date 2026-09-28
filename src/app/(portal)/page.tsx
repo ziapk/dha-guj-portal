@@ -137,7 +137,7 @@ export default function DashboardPage() {
                   : "Manage your listings and keep an eye on your plan credits."}
             </p>
           </div>
-          {screens.xl && <Image src="/brand/logo-wide.png" alt="" width={515} height={160} className="hero-logo" priority />}
+          {screens.xl && <Image src="/brand/logo-wide.png" alt="" width={515} height={160} className="hero-logo" priority unoptimized />}
           <Flex gap={10} wrap className="hero-actions">
             {isDeveloper && (
               <Link href="/projects/new">

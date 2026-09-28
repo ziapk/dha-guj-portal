@@ -5,7 +5,7 @@ import type { CSSProperties } from "react";
 export function BrandMark({ style }: { style?: CSSProperties }) {
   return (
     <span className="brand-logo brand-logo-mark" style={style}>
-      <Image src="/brand/logo-mark.png" alt="" width={256} height={256} priority />
+      <Image src="/brand/logo-mark.png" alt="" width={64} height={64} priority unoptimized />
     </span>
   );
 }

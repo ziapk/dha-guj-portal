@@ -48,7 +48,7 @@ function Brand({ collapsed }: { collapsed: boolean }) {
         <BrandMark />
       ) : (
         <span className="brand-wide">
-          <Image src="/brand/logo-wide.png" alt="DHA Gujranwala Properties" width={515} height={160} priority />
+          <Image src="/brand/logo-wide.png" alt="DHA Gujranwala Properties" width={515} height={160} priority unoptimized />
           <span className="brand-sub">Property Portal</span>
         </span>
       )}

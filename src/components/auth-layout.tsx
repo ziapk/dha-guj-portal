@@ -46,7 +46,7 @@ export function AuthLayout({ title, subtitle, children, topAction, wide }: AuthL
   return (
     <div className="login-shell">
       <section className="login-brand">
-        <Image className="login-brand-logo" src="/brand/logo-wide.png" alt="DHA Gujranwala Properties" width={515} height={160} priority />
+        <Image className="login-brand-logo" src="/brand/logo-wide.png" alt="DHA Gujranwala Properties" width={515} height={160} priority unoptimized />
 
         <div>
           <div className="login-eyebrow">Join our platform</div>
