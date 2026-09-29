@@ -2,7 +2,7 @@
 
 import { ExportOutlined, SafetyCertificateFilled, ShopOutlined, UploadOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, App, Avatar, Button, Card, Col, Flex, Form, Input, Row, Select, Skeleton, Tag, Typography, Upload } from "antd";
+import { Alert, App, Avatar, Button, Card, Col, Flex, Form, Image, Input, InputNumber, Row, Select, Skeleton, Tag, Typography, Upload } from "antd";
 import Link from "next/link";
 import { useState } from "react";
 import { AgencyVerification } from "@/components/agency-verification";
@@ -23,13 +23,63 @@ type AgencyValues = {
   website: string | null;
   address: string | null;
   about: string | null;
+  established_year: number | null;
+  service_areas: string | null;
+  facebook: string | null;
+  instagram: string | null;
+  youtube: string | null;
+  tiktok: string | null;
+  linkedin: string | null;
 };
+
+const SOCIAL_FIELDS = [
+  { name: "facebook", label: "Facebook" },
+  { name: "instagram", label: "Instagram" },
+  { name: "youtube", label: "YouTube" },
+  { name: "tiktok", label: "TikTok" },
+  { name: "linkedin", label: "LinkedIn" },
+] as const;
+
+/** Upload one agency image (logo or cover) and put the updated profile in the cache. */
+function ImageUpload({ field, label, disabled, accept = "image/png,image/jpeg,image/webp" }: { field: "logo" | "cover"; label: string; disabled: boolean; accept?: string }) {
+  const { message } = App.useApp();
+  const queryClient = useQueryClient();
+  const [uploading, setUploading] = useState(false);
+
+  return (
+    <Upload
+      accept={accept}
+      showUploadList={false}
+      disabled={disabled || uploading}
+      customRequest={({ file, onSuccess, onError }) => {
+        const formData = new FormData();
+        formData.append(field, file as Blob);
+        setUploading(true);
+
+        apiUpload<Resource<AgencyProfile>>(`portal/agency/${field}`, formData)
+          .then((result) => {
+            queryClient.setQueryData<AgencyResponse>(["agency"], (old) => (old ? { ...old, data: result.data } : old));
+            message.success(field === "logo" ? "Logo updated" : "Cover photo updated");
+            onSuccess?.(result);
+          })
+          .catch((error: Error) => {
+            message.error(errorMessage(error));
+            onError?.(error);
+          })
+          .finally(() => setUploading(false));
+      }}
+    >
+      <Button icon={<UploadOutlined />} loading={uploading} disabled={disabled}>
+        {label}
+      </Button>
+    </Upload>
+  );
+}
 
 function AgencyForm({ response }: { response: AgencyResponse }) {
   const { message } = App.useApp();
   const queryClient = useQueryClient();
   const [form] = Form.useForm<AgencyValues>();
-  const [uploading, setUploading] = useState(false);
   const profile = response.data;
 
   const cities = useQuery({
@@ -67,6 +117,13 @@ function AgencyForm({ response }: { response: AgencyResponse }) {
               website: profile.website,
               address: profile.address,
               about: profile.about,
+              established_year: profile.established_year,
+              service_areas: profile.service_areas,
+              facebook: profile.facebook,
+              instagram: profile.instagram,
+              youtube: profile.youtube,
+              tiktok: profile.tiktok,
+              linkedin: profile.linkedin,
             }}
             onFinish={(values) => save.mutate(values)}
           >
@@ -112,11 +169,33 @@ function AgencyForm({ response }: { response: AgencyResponse }) {
                   <Input />
                 </Form.Item>
               </Col>
+              <Col xs={24} md={8}>
+                <Form.Item name="established_year" label="In business since" extra="Shown as years of experience">
+                  <InputNumber min={1947} max={new Date().getFullYear()} placeholder="2016" style={{ width: "100%" }} />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={16}>
+                <Form.Item name="service_areas" label="Service areas" rules={[{ max: 255 }]}>
+                  <Input placeholder="All sectors of DHA Gujranwala" />
+                </Form.Item>
+              </Col>
               <Col xs={24}>
                 <Form.Item name="about" label="About the agency" rules={[{ max: 5000 }]}>
                   <Input.TextArea rows={6} showCount maxLength={5000} placeholder="What you specialise in, areas you cover, years in business…" />
                 </Form.Item>
               </Col>
+              <Col xs={24}>
+                <Typography.Title level={5} style={{ marginTop: 0 }}>
+                  Social media
+                </Typography.Title>
+              </Col>
+              {SOCIAL_FIELDS.map((social) => (
+                <Col xs={24} md={12} key={social.name}>
+                  <Form.Item name={social.name} label={social.label} rules={[{ type: "url", message: "Enter a full link, e.g. https://…" }]}>
+                    <Input placeholder="https://" />
+                  </Form.Item>
+                </Col>
+              ))}
             </Row>
             <Button type="primary" htmlType="submit" loading={save.isPending}>
               {profile.id ? "Save changes" : "Create agency page"}
@@ -130,35 +209,20 @@ function AgencyForm({ response }: { response: AgencyResponse }) {
           <Card title="Logo">
             <Flex align="center" gap={16}>
               <Avatar shape="square" size={80} src={profile.logo_url ?? undefined} icon={<ShopOutlined />} />
-              <Upload
-                accept="image/png,image/jpeg,image/webp"
-                showUploadList={false}
-                disabled={!profile.id || uploading}
-                customRequest={({ file, onSuccess, onError }) => {
-                  const formData = new FormData();
-                  formData.append("logo", file as Blob);
-                  setUploading(true);
-
-                  apiUpload<Resource<AgencyProfile>>("portal/agency/logo", formData)
-                    .then((result) => {
-                      queryClient.setQueryData<AgencyResponse>(["agency"], (old) => (old ? { ...old, data: result.data } : old));
-                      message.success("Logo updated");
-                      onSuccess?.(result);
-                    })
-                    .catch((error: Error) => {
-                      message.error(errorMessage(error));
-                      onError?.(error);
-                    })
-                    .finally(() => setUploading(false));
-                }}
-              >
-                <Button icon={<UploadOutlined />} loading={uploading} disabled={!profile.id}>
-                  {profile.logo_url ? "Replace logo" : "Upload logo"}
-                </Button>
-              </Upload>
+              <ImageUpload field="logo" label={profile.logo_url ? "Replace logo" : "Upload logo"} disabled={!profile.id} />
             </Flex>
             <Typography.Paragraph type="secondary" style={{ margin: "12px 0 0", fontSize: 12 }}>
               {profile.id ? "Square PNG, JPG or WebP, up to 2 MB." : "Save your agency details first."}
+            </Typography.Paragraph>
+          </Card>
+
+          <Card title="Cover photo">
+            {profile.cover_url && (
+              <Image src={profile.cover_url} alt="Agency cover" width="100%" style={{ aspectRatio: "3 / 1", objectFit: "cover", borderRadius: 8, marginBottom: 12 }} />
+            )}
+            <ImageUpload field="cover" label={profile.cover_url ? "Replace cover photo" : "Upload cover photo"} disabled={!profile.id} />
+            <Typography.Paragraph type="secondary" style={{ margin: "12px 0 0", fontSize: 12 }}>
+              {profile.id ? "Wide photo behind your page header, e.g. 1600×600. JPG, PNG or WebP, up to 4 MB." : "Save your agency details first."}
             </Typography.Paragraph>
           </Card>
 
