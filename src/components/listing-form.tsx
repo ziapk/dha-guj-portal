@@ -7,10 +7,10 @@ import {
   BorderOutlined,
   BuildOutlined,
   BulbOutlined,
+  CalendarOutlined,
   CheckCircleOutlined,
   CheckOutlined,
   CheckSquareOutlined,
-  ColumnHeightOutlined,
   CompassOutlined,
   DollarOutlined,
   EnvironmentOutlined,
@@ -18,7 +18,6 @@ import {
   FileTextOutlined,
   FlagOutlined,
   FontSizeOutlined,
-  GlobalOutlined,
   GoldOutlined,
   HomeOutlined,
   IdcardOutlined,
@@ -27,7 +26,6 @@ import {
   LayoutOutlined,
   LockOutlined,
   NumberOutlined,
-  PhoneOutlined,
   PictureOutlined,
   ProfileOutlined,
   RocketOutlined,
@@ -36,52 +34,32 @@ import {
   StarOutlined,
   SwapOutlined,
   TagOutlined,
+  TeamOutlined,
   UserOutlined,
-  WhatsAppOutlined,
 } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Card,
-  Col,
-  Form,
-  Input,
-  InputNumber,
-  Row,
-  Select,
-  Skeleton,
-  Switch,
-  Tag,
-  Typography,
-  type FormInstance,
-} from "antd";
+import { Card, Col, Form, Input, InputNumber, Row, Select, Skeleton, Switch, Tag, Typography, type FormInstance } from "antd";
 import { useEffect, type ReactNode } from "react";
+import { AreaSizeField, PriceInput, YearBuiltField } from "@/components/listing-inputs";
+import { RichTextEditor } from "@/components/rich-text-editor";
+import { useMe } from "@/hooks/use-me";
 import { groupAmenities } from "@/lib/amenities";
 import { api } from "@/lib/api-client";
-import {
-  AREA_UNIT_LABELS,
-  FURNISHED_LABELS,
-  PROPERTY_AVAILABILITY_LABELS,
-  PROPERTY_STATUS_COLORS,
-  PROPERTY_STATUS_LABELS,
-  formatCompactPrice,
-  formatDate,
-  toOptions,
-} from "@/lib/labels";
+import { FURNISHED_LABELS, PROPERTY_AVAILABILITY_LABELS, PROPERTY_STATUS_COLORS, PROPERTY_STATUS_LABELS, formatCompactPrice, formatDate } from "@/lib/labels";
 import type {
+  AgentsResponse,
   Amenity,
   AreaUnit,
   Block,
-  Sector,
-  City,
   Collection,
   FurnishedStatus,
-  Phase,
+  ListingLocation,
   Property,
   PropertyAvailability,
   PropertyCategory,
   PropertyPurpose,
   PropertyType,
-  Society,
+  Sector,
 } from "@/types/api";
 
 export type ListingFormValues = {
@@ -89,6 +67,7 @@ export type ListingFormValues = {
   category: PropertyCategory;
   property_type_id?: number;
   title: string;
+  /** HTML from the rich text editor. */
   description: string;
   price?: number;
   is_negotiable: boolean;
@@ -98,22 +77,18 @@ export type ListingFormValues = {
   installments_count?: number | null;
   area_size?: number;
   area_unit: AreaUnit;
-  city_id?: number;
-  society_id?: number | null;
   phase?: string | null;
   sector?: string | null;
   block?: string | null;
-  address?: string | null;
+  /** House / plot number: private, only the owner and admins see it. */
+  plot_number?: string | null;
   bedrooms?: number | null;
   bathrooms?: number | null;
-  floors?: number | null;
   year_built?: number | null;
   furnished?: FurnishedStatus | null;
   amenity_ids: number[];
-  plot_number?: string | null;
-  contact_name?: string | null;
-  contact_phone?: string | null;
-  contact_whatsapp?: string | null;
+  /** Agency only: the agent whose profile and contact details the listing shows. */
+  agent_user_id?: number | null;
   property_status: PropertyAvailability;
   is_urgent: boolean;
 };
@@ -146,28 +121,22 @@ export function propertyToFormValues(property: Property): ListingFormValues {
     installments_count: property.installments_count,
     area_size: Number(property.area_size),
     area_unit: property.area_unit,
-    city_id: property.city?.id,
-    society_id: property.society?.id ?? null,
     phase: property.phase,
     sector: property.sector,
     block: property.block,
-    address: property.address,
+    plot_number: property.plot_number,
     bedrooms: property.bedrooms,
     bathrooms: property.bathrooms,
-    floors: property.floors,
     year_built: property.year_built,
     furnished: property.furnished,
     amenity_ids: (property.amenities ?? []).map((amenity) => amenity.id),
-    plot_number: property.plot_number,
-    contact_name: property.contact_name,
-    contact_phone: property.contact_phone,
-    contact_whatsapp: property.contact_whatsapp,
+    agent_user_id: property.agent_user_id,
     property_status: property.property_status,
     is_urgent: property.is_urgent,
   };
 }
 
-/** Form values → API body: drops UI-only fields and clears fields that do not apply. */
+/** Form values → API body: drops UI-only fields and clears fields that do not apply to the property type. */
 export function formValuesToPayload(values: ListingFormValues): Record<string, unknown> {
   const payload: Record<string, unknown> = { ...values };
   delete payload.category;
@@ -178,10 +147,13 @@ export function formValuesToPayload(values: ListingFormValues): Record<string, u
     payload.installments_count = null;
   }
 
-  if (values.category === "plot") {
+  if (values.category !== "residential") {
     payload.bedrooms = null;
+  }
+
+  if (values.category === "plot") {
     payload.bathrooms = null;
-    payload.floors = null;
+    payload.year_built = null;
     payload.furnished = null;
   }
 
@@ -242,7 +214,7 @@ export function NameChoice({
     <Select
       showSearch={{ optionFilterProp: "label" }}
       allowClear
-      placeholder="Choose"
+      placeholder={placeholder}
       disabled={disabled}
       value={value ?? undefined}
       options={options}
@@ -256,6 +228,15 @@ export function NameChoice({
 
 export const withCommas = (value: number | string | undefined) => `${value ?? ""}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 export const withoutCommas = (value: string | undefined) => Number((value ?? "").replace(/,/g, ""));
+
+/** The visible text of rich text HTML, for length checks. */
+function htmlText(html: string | undefined): string {
+  if (!html) {
+    return "";
+  }
+
+  return (new DOMParser().parseFromString(html, "text/html").body.textContent ?? "").trim();
+}
 
 /* ---------- Building blocks for the listing form layout ---------- */
 
@@ -419,9 +400,19 @@ function propertyTypeIcon(type: PropertyType): ReactNode {
   return <AppstoreOutlined />;
 }
 
-const FEATURE_TARGET = 5;
+/**
+ * Which building details a property type has: none for plots and land, bedrooms only for homes,
+ * bathrooms, year built and furnishing for any built property.
+ */
+function detailsFor(category: PropertyCategory, type: PropertyType | undefined) {
+  const land = category === "plot" || (type !== undefined && /plot|land|file/i.test(`${type.slug} ${type.name}`));
 
-/** Features that apply to a property type: those assigned to it, plus those assigned to no type (every type). */
+  return { built: !land, bedrooms: !land && category === "residential" };
+}
+
+const AMENITY_TARGET = 5;
+
+/** Amenities that apply to a property type: those assigned to it, plus those assigned to no type (every type). */
 export function featuresFor(amenities: Amenity[], propertyTypeId: number | undefined): Amenity[] {
   if (!propertyTypeId) {
     return [];
@@ -430,7 +421,7 @@ export function featuresFor(amenities: Amenity[], propertyTypeId: number | undef
   return amenities.filter((amenity) => !amenity.property_type_ids?.length || amenity.property_type_ids.includes(propertyTypeId));
 }
 
-/** Toggle chips for the main features, under their category headings. */
+/** Toggle chips for the amenities, under their group headings. */
 function FeatureChips({ features, value = [], onChange, disabled }: { features: Amenity[]; value?: number[]; onChange?: (ids: number[]) => void; disabled?: boolean }) {
   return (
     <div className="lf-feature-groups">
@@ -483,6 +474,66 @@ const PROPERTY_STATUS_HINTS: Record<PropertyAvailability, string> = {
   rented: "The page stays online with a RENTED notice and similar listings, but leaves search and frees its slot.",
 };
 
+/**
+ * Who buyers contact. Never typed per listing: it comes from the account, the agency or the chosen agent's profile.
+ */
+function ContactBlock({ property, disabled }: { property?: Property; disabled?: boolean }) {
+  const me = useMe();
+  const isAgency = me.data?.account_type === "agency";
+  const postedByAgent = property?.owner?.account_type === "agent";
+  const agents = useQuery({
+    queryKey: ["agents"],
+    queryFn: () => api<AgentsResponse>("portal/agents"),
+    enabled: isAgency,
+  });
+
+  if (!me.data) {
+    return <Skeleton active paragraph={{ rows: 1 }} />;
+  }
+
+  if (me.data.account_type === "agent" || postedByAgent) {
+    const agentName = postedByAgent ? property?.owner?.name : me.data.name;
+
+    return (
+      <Field icon={<IdcardOutlined />} label="Shown on the listing" hint="The agent's public profile: name, photo, phone and WhatsApp. Change them on the agent profile page.">
+        <Tag icon={<UserOutlined />}>{agentName}</Tag>
+      </Field>
+    );
+  }
+
+  if (!isAgency) {
+    return (
+      <Field icon={<IdcardOutlined />} label="Shown on the listing" hint="Your account name and phone number. Change them on your profile page.">
+        <Tag icon={<UserOutlined />}>
+          {me.data.name}
+          {me.data.phone ? ` · ${me.data.phone}` : ""}
+        </Tag>
+      </Field>
+    );
+  }
+
+  const activeAgents = (agents.data?.data ?? []).filter((agent) => agent.status === "active");
+
+  return (
+    <Field
+      icon={<TeamOutlined />}
+      label="Agent on this listing"
+      hint="By default the listing shows your agency's contact details. Pick an agent to show their profile, phone and WhatsApp instead."
+    >
+      <Form.Item name="agent_user_id">
+        <Select
+          allowClear
+          disabled={disabled}
+          loading={agents.isLoading}
+          placeholder={`${me.data.name} (agency contact)`}
+          options={activeAgents.map((agent) => ({ value: agent.id, label: `${agent.name}${agent.phone ? ` · ${agent.phone}` : ""}` }))}
+          notFoundContent="No active agents yet. Add agents on the Agents page."
+        />
+      </Form.Item>
+    </Field>
+  );
+}
+
 export function ListingForm({
   form,
   onFinish,
@@ -495,13 +546,11 @@ export function ListingForm({
   disabled?: boolean;
   /** Photos & videos block content, shown as the Media section. */
   media?: ReactNode;
-  /** The saved listing, when editing: its listing status, promotions and SEO are shown read-only. */
+  /** The saved listing, when editing: its listing status and promotions are shown read-only. */
   property?: Property;
 }) {
   const category = Form.useWatch("category", form) ?? "residential";
   const propertyTypeId = Form.useWatch("property_type_id", form);
-  const cityId = Form.useWatch("city_id", form);
-  const societyId = Form.useWatch("society_id", form);
   const phaseName = Form.useWatch("phase", form);
   const sectorName = Form.useWatch("sector", form);
   const price = Form.useWatch("price", form);
@@ -514,25 +563,13 @@ export function ListingForm({
     queryFn: () => api<Collection<PropertyType>>("public/property-types").then((response) => response.data),
     staleTime: Infinity,
   });
-  const cities = useQuery({
-    queryKey: ["master", "cities"],
-    queryFn: () => api<Collection<City>>("public/cities").then((response) => response.data),
-    staleTime: Infinity,
-  });
-  const societies = useQuery({
-    queryKey: ["master", "societies", cityId],
-    queryFn: () => api<Collection<Society>>("public/societies", { query: { city_id: cityId } }).then((response) => response.data),
-    enabled: Boolean(cityId),
-    staleTime: Infinity,
-  });
-  const phases = useQuery({
-    queryKey: ["master", "phases", societyId],
-    queryFn: () => api<Collection<Phase>>("public/phases", { query: { society_id: societyId } }).then((response) => response.data),
-    enabled: Boolean(societyId),
+  const location = useQuery({
+    queryKey: ["master", "listing-location"],
+    queryFn: () => api<{ data: ListingLocation }>("public/listing-location").then((response) => response.data),
     staleTime: Infinity,
   });
   // Listings store the phase name, so find the chosen phase's id to load its sectors.
-  const phaseId = phases.data?.find((phase) => phase.name === phaseName)?.id;
+  const phaseId = location.data?.phases.find((phase) => phase.name === phaseName)?.id;
   const sectors = useQuery({
     queryKey: ["master", "sectors", phaseId],
     queryFn: () => api<Collection<Sector>>("public/sectors", { query: { phase_id: phaseId } }).then((response) => response.data),
@@ -556,10 +593,21 @@ export function ListingForm({
   const typeOptions = (propertyTypes.data ?? [])
     .filter((type) => type.category === category)
     .map((type) => ({ value: type.id, label: type.name, icon: propertyTypeIcon(type) }));
+  const details = detailsFor(
+    category,
+    (propertyTypes.data ?? []).find((type) => type.id === propertyTypeId),
+  );
   const features = featuresFor(amenities.data ?? [], propertyTypeId);
   const chosenFeatures = features.filter((feature) => (amenityIds ?? []).includes(feature.id)).length;
 
-  // A different property type offers different features: drop the ones it does not have.
+  // A new listing starts on the default phase (Phase 1).
+  useEffect(() => {
+    if (!property && location.data && !form.getFieldValue("phase")) {
+      form.setFieldValue("phase", location.data.default_phase);
+    }
+  }, [property, location.data, form]);
+
+  // A different property type offers different amenities: drop the ones it does not have.
   useEffect(() => {
     if (!amenities.data || !propertyTypeId) {
       return;
@@ -575,8 +623,6 @@ export function ListingForm({
       );
     }
   }, [amenities.data, propertyTypeId, form]);
-
-  const seo = property?.seo;
 
   return (
     <Form
@@ -602,7 +648,7 @@ export function ListingForm({
           </Form.Item>
         </Field>
 
-        <Field icon={<AppstoreOutlined />} label="Select property type" hint="The main features below change with the property type.">
+        <Field icon={<AppstoreOutlined />} label="Select property type" hint="The main features and amenities below change with the property type.">
           <Form.Item name="category" noStyle>
             <CategoryTabs disabled={disabled} onPick={() => form.setFieldValue("property_type_id", undefined)} />
           </Form.Item>
@@ -611,15 +657,8 @@ export function ListingForm({
           </Form.Item>
         </Field>
 
-        <Field icon={<ExpandOutlined />} label="Area size">
-          <div className="lf-pair">
-            <Form.Item name="area_size" rules={[{ required: true, message: "Enter the area" }]}>
-              <InputNumber min={0.01} placeholder="Enter area" style={{ width: "100%" }} />
-            </Form.Item>
-            <Form.Item name="area_unit" rules={[{ required: true }]}>
-              <Select options={toOptions(AREA_UNIT_LABELS)} />
-            </Form.Item>
-          </div>
+        <Field icon={<ExpandOutlined />} label="Area size" hint="Pick a common size, or Other to enter the exact area and unit.">
+          <AreaSizeField disabled={disabled} />
         </Field>
 
         <Field icon={<FontSizeOutlined />} label="Title">
@@ -627,79 +666,72 @@ export function ListingForm({
             <Input maxLength={150} showCount placeholder="Enter property title, e.g. Beautiful 10 Marla house in DHA Phase 1" />
           </Form.Item>
         </Field>
-        <Field icon={<ProfileOutlined />} label="Description">
-          <Form.Item name="description" rules={[{ required: true, message: "Describe the property" }, { min: 30, message: "At least 30 characters" }]}>
-            <Input.TextArea rows={6} maxLength={5000} showCount placeholder="Describe your property, its features, the area it is in, etc." />
+        <Field icon={<ProfileOutlined />} label="Description" hint="Use paragraphs, bullet points and bold text to make the details easy to read.">
+          <Form.Item
+            name="description"
+            rules={[
+              {
+                validator: (_, value: string | undefined) => {
+                  const length = htmlText(value).length;
+
+                  if (length === 0) return Promise.reject(new Error("Describe the property"));
+                  if (length < 30) return Promise.reject(new Error("At least 30 characters"));
+                  if (length > 5000) return Promise.reject(new Error("At most 5,000 characters"));
+                  return Promise.resolve();
+                },
+              },
+            ]}
+          >
+            <RichTextEditor disabled={disabled} placeholder="Describe your property, its features, the area it is in, etc." />
           </Form.Item>
         </Field>
       </FormBlock>
 
-      <FormBlock icon={<EnvironmentOutlined />} title="Location">
-        <Field icon={<EnvironmentOutlined />} label="City">
-          <Form.Item name="city_id" rules={[{ required: true, message: "Choose a city" }]}>
-            <Select
-              showSearch={{ optionFilterProp: "label" }}
-              placeholder="Select city"
-              loading={cities.isLoading}
-              options={(cities.data ?? []).map((city) => ({ value: city.id, label: city.name }))}
-              onChange={() => form.setFieldsValue({ society_id: undefined, phase: undefined, sector: undefined, block: undefined })}
-            />
-          </Form.Item>
-        </Field>
-
-        <Field icon={<CompassOutlined />} label="Location" hint="Society, then phase, sector and block where they apply.">
-          <Form.Item name="society_id">
-            <Select
-              showSearch={{ optionFilterProp: "label" }}
-              allowClear
-              disabled={disabled || !cityId}
-              placeholder={cityId ? "Search society / area" : "Choose a city first"}
-              loading={societies.isFetching}
-              options={(societies.data ?? []).map((society) => ({ value: society.id, label: society.name }))}
-              onChange={() => form.setFieldsValue({ phase: undefined, sector: undefined, block: undefined })}
-            />
-          </Form.Item>
+      <FormBlock icon={<EnvironmentOutlined />} title="Location" hint={`${location.data?.society?.name ?? "DHA Gujranwala"}: choose the phase, sector and block.`}>
+        <Field icon={<CompassOutlined />} label="Phase, sector and block">
           <Row gutter={12}>
             <Col xs={24} sm={8}>
-              <Form.Item name="phase" rules={[{ max: 50, message: "At most 50 characters" }]}>
+              <Form.Item name="phase" label="Phase" rules={[{ required: true, message: "Choose the phase" }, { max: 50, message: "At most 50 characters" }]}>
                 <NameChoice
-                  names={societyId ? phases.data : []}
-                  loading={Boolean(societyId) && phases.isFetching}
+                  names={location.data?.phases}
+                  loading={location.isLoading}
                   placeholder="Phase, e.g. Phase 1"
                   onPick={() => form.setFieldsValue({ sector: undefined, block: undefined })}
                 />
               </Form.Item>
             </Col>
             <Col xs={12} sm={8}>
-              <Form.Item name="sector" rules={[{ max: 50, message: "At most 50 characters" }]}>
+              <Form.Item name="sector" label="Sector" rules={[{ max: 50, message: "At most 50 characters" }]}>
                 <NameChoice
                   names={phaseId ? sectors.data : []}
                   loading={Boolean(phaseId) && sectors.isFetching}
-                  placeholder="Sector, e.g. K"
+                  placeholder="Select sector"
                   onPick={() => form.setFieldValue("block", undefined)}
                 />
               </Form.Item>
             </Col>
             <Col xs={12} sm={8}>
-              <Form.Item name="block" rules={[{ max: 50, message: "At most 50 characters" }]}>
-                <NameChoice names={sectorId ? blocks.data : []} loading={Boolean(sectorId) && blocks.isFetching} placeholder="Block, e.g. A" />
+              <Form.Item name="block" label="Block" rules={[{ max: 50, message: "At most 50 characters" }]}>
+                <NameChoice names={sectorId ? blocks.data : []} loading={Boolean(sectorId) && blocks.isFetching} placeholder="Select block" />
               </Form.Item>
             </Col>
           </Row>
-          <Form.Item name="address">
-            <Input placeholder="Street, landmark (optional)" />
+        </Field>
+        <Field icon={<NumberOutlined />} label="House / plot number">
+          <Form.Item name="plot_number" rules={[{ max: 50, message: "At most 50 characters" }]}>
+            <Input placeholder="e.g. 123-A" suffix={<LockOutlined />} />
           </Form.Item>
+          <div className="lf-private-note">
+            <LockOutlined /> Private: only you and our admins can see this. It is never shown on the website.
+          </div>
         </Field>
       </FormBlock>
 
       <FormBlock icon={<DollarOutlined />} title="Pricing">
-        <Field icon={<TagOutlined />} label="Price">
-          <div className="lf-pair">
-            <Form.Item name="price" rules={[{ required: true, message: "Enter the price" }]} extra={price ? `≈ ${formatCompactPrice(price)}` : undefined}>
-              <InputNumber<number> min={1} step={100000} placeholder="Enter price" style={{ width: "100%" }} formatter={withCommas} parser={withoutCommas} />
-            </Form.Item>
-            <Select value="PKR" disabled options={[{ value: "PKR", label: "PKR" }]} />
-          </div>
+        <Field icon={<TagOutlined />} label="Price (PKR)" hint="Type the amount and pick Thousand, Lakh or Crore, e.g. 1.5 Crore or 45 Thousand.">
+          <Form.Item name="price" rules={[{ required: true, message: "Enter the price" }]} extra={price ? `= PKR ${withCommas(price)} (${formatCompactPrice(price)})` : undefined}>
+            <PriceInput disabled={disabled} />
+          </Form.Item>
         </Field>
 
         <Field icon={<SwapOutlined />} label="Terms">
@@ -727,38 +759,33 @@ export function ListingForm({
         </Field>
       </FormBlock>
 
-      <FormBlock icon={<HomeOutlined />} title="Main Features">
-        {category !== "plot" && (
-          <>
+      {details.built && (
+        <FormBlock icon={<HomeOutlined />} title="Main Features" hint="Only the details that apply to this property type are asked.">
+          {details.bedrooms && (
             <Field icon={<LayoutOutlined />} label="Bedrooms">
               <Form.Item name="bedrooms">
                 <CountChips limit={50} disabled={disabled} />
               </Form.Item>
             </Field>
-            <Field icon={<InsuranceOutlined />} label="Bathrooms">
-              <Form.Item name="bathrooms">
-                <CountChips limit={50} disabled={disabled} />
-              </Form.Item>
-            </Field>
-            <Field icon={<ColumnHeightOutlined />} label="Floors and year built">
-              <div className="lf-pair even">
-                <Form.Item name="floors">
-                  <InputNumber min={0} max={200} placeholder="Floors" style={{ width: "100%" }} />
-                </Form.Item>
-                <Form.Item name="year_built">
-                  <InputNumber min={1900} max={new Date().getFullYear() + 2} placeholder="Year built" style={{ width: "100%" }} />
-                </Form.Item>
-              </div>
-            </Field>
-            <Field icon={<SkinOutlined />} label="Furnishing">
-              <Form.Item name="furnished">
-                <ChipGroup disabled={disabled} clearable options={Object.entries(FURNISHED_LABELS).map(([value, label]) => ({ value: value as FurnishedStatus, label }))} />
-              </Form.Item>
-            </Field>
-          </>
-        )}
+          )}
+          <Field icon={<InsuranceOutlined />} label="Bathrooms">
+            <Form.Item name="bathrooms">
+              <CountChips limit={50} disabled={disabled} />
+            </Form.Item>
+          </Field>
+          <Field icon={<CalendarOutlined />} label="Year built" hint="Optional. Pick a recent year, or Other for any other year.">
+            <YearBuiltField disabled={disabled} />
+          </Field>
+          <Field icon={<SkinOutlined />} label="Furnishing">
+            <Form.Item name="furnished">
+              <ChipGroup disabled={disabled} clearable options={Object.entries(FURNISHED_LABELS).map(([value, label]) => ({ value: value as FurnishedStatus, label }))} />
+            </Form.Item>
+          </Field>
+        </FormBlock>
+      )}
 
-        <Field icon={<StarOutlined />} label="Features" hint={propertyTypeId ? "Pick everything this property has. Buyers can filter by these." : "Choose a property type first to see its features."}>
+      <FormBlock icon={<StarOutlined />} title="Amenities" hint="Optional. Pick everything this property has; buyers can filter by these.">
+        <Field icon={<CheckSquareOutlined />} label="Amenities" hint={propertyTypeId ? undefined : "Choose a property type first to see its amenities."}>
           {amenities.isLoading ? (
             <Skeleton active paragraph={{ rows: 2 }} />
           ) : (
@@ -766,15 +793,19 @@ export function ListingForm({
               <FeatureChips features={features} disabled={disabled} />
             </Form.Item>
           )}
-          {features.length > 0 && <QualityTip text={`Add at least ${FEATURE_TARGET} features`} current={chosenFeatures} target={Math.min(FEATURE_TARGET, features.length)} />}
+          {features.length > 0 && <QualityTip text={`Add at least ${AMENITY_TARGET} amenities`} current={chosenFeatures} target={Math.min(AMENITY_TARGET, features.length)} />}
         </Field>
       </FormBlock>
 
       {media && (
-        <FormBlock icon={<PictureOutlined />} title="Media">
+        <FormBlock icon={<PictureOutlined />} title="Photos & Video">
           {media}
         </FormBlock>
       )}
+
+      <FormBlock icon={<UserOutlined />} title="Contact Information" hint="Taken from your profile automatically, so buyers always reach the right person.">
+        <ContactBlock property={property} disabled={disabled} />
+      </FormBlock>
 
       <FormBlock icon={<FlagOutlined />} title="Listing Status" hint="Where the listing is in review and publishing. It changes through the actions at the top of the page.">
         <StateRow
@@ -782,7 +813,7 @@ export function ListingForm({
           value={property ? <Tag color={PROPERTY_STATUS_COLORS[property.status]}>{PROPERTY_STATUS_LABELS[property.status]}</Tag> : <Tag>Draft</Tag>}
           hint={
             !property
-              ? "Saving creates a free draft. Submit it for review to make it active."
+              ? "Saving creates a free draft. Submit it for review to make it active. The page title, description and link are created automatically when it is approved."
               : property.status === "published" && property.expires_at
                 ? `Active until ${formatDate(property.expires_at)}.`
                 : property.status === "inactive" && property.published_at
@@ -792,6 +823,17 @@ export function ListingForm({
                     : undefined
           }
         />
+        {property?.published_at && (
+          <StateRow
+            label="Page link"
+            value={
+              <Typography.Link href={property.public_url} target="_blank" rel="noopener noreferrer" ellipsis style={{ maxWidth: 320 }}>
+                {property.url}
+              </Typography.Link>
+            }
+            hint="Created automatically from the property details when it was approved."
+          />
+        )}
       </FormBlock>
 
       <FormBlock icon={<CheckSquareOutlined />} title="Property Status" hint="Whether the property itself is still on the market. Separate from the listing status: a sold property's listing stays active.">
@@ -811,50 +853,6 @@ export function ListingForm({
             <StateRow label="Premium" value={property.is_premium ? <Tag color="purple">Until {formatDate(property.premium_until)}</Tag> : <Tag>Off</Tag>} hint="Set by our team." />
           </>
         )}
-      </FormBlock>
-
-      <FormBlock icon={<GlobalOutlined />} title="SEO Settings" hint="Generated automatically from the listing details. Our team can fine-tune them.">
-        {seo ? (
-          <>
-            <div className="lf-serp">
-              <div className="lf-serp-url">{property?.public_url}</div>
-              <div className="lf-serp-title">{seo.effective.title}</div>
-              <div className="lf-serp-desc">{seo.effective.description}</div>
-            </div>
-            <StateRow label="Search engines" value={<Tag color={seo.effective.index ? "green" : "default"}>{seo.effective.index ? "Indexed" : "Not indexed"}</Tag>} />
-            <StateRow label="Sitemap" value={<Tag color={seo.effective.sitemap ? "green" : "default"}>{seo.effective.sitemap ? "Included" : "Excluded"}</Tag>} />
-          </>
-        ) : (
-          <Typography.Paragraph type="secondary" style={{ margin: "0 0 20px" }}>
-            After saving, the title, description and a permanent link like /property/12548/5-marla-plot-sector-c-dha-gujranwala are created from the details above.
-          </Typography.Paragraph>
-        )}
-      </FormBlock>
-
-      <FormBlock icon={<UserOutlined />} title="Contact Information" hint="Leave empty to use your account details.">
-        <Field icon={<IdcardOutlined />} label="Contact name">
-          <Form.Item name="contact_name">
-            <Input placeholder="Your account name" />
-          </Form.Item>
-        </Field>
-        <Field icon={<PhoneOutlined />} label="Mobile">
-          <Form.Item name="contact_phone">
-            <Input prefix="🇵🇰" placeholder="03001234567" />
-          </Form.Item>
-        </Field>
-        <Field icon={<WhatsAppOutlined />} label="WhatsApp">
-          <Form.Item name="contact_whatsapp">
-            <Input prefix="🇵🇰" placeholder="03001234567" />
-          </Form.Item>
-        </Field>
-      </FormBlock>
-
-      <FormBlock icon={<LockOutlined />} title="Private Details" hint="Only you and our admins can see this.">
-        <Field icon={<NumberOutlined />} label="Plot / house number">
-          <Form.Item name="plot_number">
-            <Input placeholder="e.g. 123-A" />
-          </Form.Item>
-        </Field>
       </FormBlock>
     </Form>
   );

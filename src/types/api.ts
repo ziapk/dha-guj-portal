@@ -214,10 +214,11 @@ export type Property = {
   floors: number | null;
   year_built: number | null;
   furnished: FurnishedStatus | null;
+  /** Private: only the owner and admins see it. */
   plot_number: string | null;
-  contact_name: string | null;
-  contact_phone: string | null;
-  contact_whatsapp: string | null;
+  /** The agent whose profile and contact details the listing shows; null shows the owner's / agency's own. */
+  agent_user_id: number | null;
+  agent?: { id: number; name: string; phone: string | null } | null;
   amenities?: Amenity[];
   media?: PropertyMedia[];
   rejection_reason: string | null;
@@ -683,4 +684,12 @@ export type Banner = {
   impressions: number;
   clicks: number;
   created_at: string;
+};
+
+/** Where new listings go (DHA Gujranwala) and the phase the form starts on. */
+export type ListingLocation = {
+  city: City | null;
+  society: Society | null;
+  phases: { id: number; name: string }[];
+  default_phase: string;
 };

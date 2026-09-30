@@ -1,8 +1,9 @@
 "use client";
 
-import { CheckOutlined, DeleteOutlined, PictureOutlined, PlusOutlined, VideoCameraOutlined } from "@ant-design/icons";
-import { App, Button, Flex, Input, Typography, Upload, type UploadFile } from "antd";
-import { useState, type Dispatch, type SetStateAction } from "react";
+import { CheckOutlined, DeleteOutlined, PictureOutlined, VideoCameraOutlined } from "@ant-design/icons";
+import { App, Button, Flex, Typography, Upload, type UploadFile } from "antd";
+import type { Dispatch, SetStateAction } from "react";
+import { SortableThumbs, VideoLinkInput } from "@/components/listing-inputs";
 import { Field, QualityTip } from "@/components/listing-form";
 
 const PHOTO_TARGET = 5;
@@ -25,20 +26,6 @@ export function ListingMediaPicker({
   disabled?: boolean;
 }) {
   const { message } = App.useApp();
-  const [videoUrl, setVideoUrl] = useState("");
-  const [addingVideo, setAddingVideo] = useState(false);
-
-  function addVideo() {
-    const url = videoUrl.trim();
-
-    if (url) {
-      onChange((prev) => (prev.videos.includes(url) ? prev : { ...prev, videos: [...prev.videos, url] }));
-    }
-
-    setVideoUrl("");
-    setAddingVideo(false);
-  }
-
   return (
     <>
       <Field icon={<PictureOutlined />} label="Upload images of your property">
@@ -74,29 +61,23 @@ export function ListingMediaPicker({
               <CheckOutlined /> Upload good quality pictures with proper lighting.
             </li>
             <li>
-              <CheckOutlined /> The first photo is used as the cover.
+              <CheckOutlined /> The first photo is the cover; drag to reorder.
             </li>
           </ul>
         </div>
 
         {value.photos.length > 0 && (
-          <div className="lf-thumbs">
-            {value.photos.map((photo, index) => (
-              <div key={photo.uid} className="lf-thumb">
-                {/* eslint-disable-next-line @next/next/no-img-element -- local blob preview */}
-                <img src={photo.thumbUrl} alt={photo.name} />
-                {index === 0 && <span className="lf-thumb-cover">Cover</span>}
-                <button
-                  type="button"
-                  aria-label="Remove photo"
-                  disabled={disabled}
-                  onClick={() => onChange((prev) => ({ ...prev, photos: prev.photos.filter((item) => item.uid !== photo.uid) }))}
-                >
-                  <DeleteOutlined />
-                </button>
-              </div>
-            ))}
-          </div>
+          <>
+            <SortableThumbs
+              disabled={disabled}
+              items={value.photos.map((photo) => ({ key: photo.uid, src: photo.thumbUrl, alt: photo.name }))}
+              onReorder={(keys) => onChange((prev) => ({ ...prev, photos: keys.map((key) => prev.photos.find((photo) => photo.uid === key)!) }))}
+              onRemove={(key) => onChange((prev) => ({ ...prev, photos: prev.photos.filter((photo) => photo.uid !== key) }))}
+            />
+            <div className="lf-field-hint" style={{ marginTop: 8 }}>
+              Drag photos (or use the arrows) to set their order. It becomes the gallery order on the property page.
+            </div>
+          </>
         )}
 
         <div style={{ marginTop: 12 }}>
@@ -104,7 +85,7 @@ export function ListingMediaPicker({
         </div>
       </Field>
 
-      <Field icon={<VideoCameraOutlined />} label="Add videos of your property" hint="Upload the video to YouTube and paste the link here.">
+      <Field icon={<VideoCameraOutlined />} label="Add a video of your property" hint="Upload the video to YouTube (or Vimeo) and paste the link here.">
         {value.videos.map((url) => (
           <Flex key={url} align="center" justify="space-between" gap={12} style={{ padding: "4px 0" }}>
             <Typography.Text ellipsis>{url}</Typography.Text>
@@ -119,21 +100,7 @@ export function ListingMediaPicker({
             />
           </Flex>
         ))}
-        {addingVideo ? (
-          <Input.Search
-            autoFocus
-            placeholder="Paste a YouTube or Vimeo link"
-            enterButton="Add"
-            value={videoUrl}
-            onChange={(event) => setVideoUrl(event.target.value)}
-            onSearch={addVideo}
-            onBlur={() => !videoUrl && setAddingVideo(false)}
-          />
-        ) : (
-          <Button icon={<PlusOutlined />} disabled={disabled} onClick={() => setAddingVideo(true)} className="lf-outline-btn">
-            Add video
-          </Button>
-        )}
+        <VideoLinkInput disabled={disabled} onAdd={(url) => onChange((prev) => (prev.videos.includes(url) ? prev : { ...prev, videos: [...prev.videos, url] }))} />
       </Field>
     </>
   );

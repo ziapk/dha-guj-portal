@@ -1,19 +1,19 @@
 "use client";
 
-import { DeleteOutlined, PictureOutlined, PlusOutlined, StarFilled, VideoCameraOutlined } from "@ant-design/icons";
+import { DeleteOutlined, DragOutlined, PictureOutlined, PlusOutlined, VideoCameraOutlined } from "@ant-design/icons";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { App, Button, Card, Empty, Flex, Image, Input, Popconfirm, Tag, Typography, Upload } from "antd";
+import { App, Button, Card, Empty, Flex, Popconfirm, Typography, Upload } from "antd";
 import { useState } from "react";
 import { api, apiUpload } from "@/lib/api-client";
 import { errorMessage } from "@/lib/form-errors";
-import { mediumUrl, thumbnailUrl } from "@/lib/media";
-import type { Property, PropertyMedia, Resource } from "@/types/api";
+import { thumbnailUrl } from "@/lib/media";
+import { SortableThumbs, VideoLinkInput } from "@/components/listing-inputs";
+import type { Collection, Property, PropertyMedia, Resource } from "@/types/api";
 
 /** Upload, preview and remove a listing's photos and video links. `bare` leaves out the card, e.g. inside a form section. */
 export function MediaManager({ property, disabled, bare = false }: { property: Property; disabled: boolean; bare?: boolean }) {
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const queryClient = useQueryClient();
-  const [videoUrl, setVideoUrl] = useState("");
   const [uploading, setUploading] = useState(0);
 
   const media = property.media ?? [];
@@ -26,10 +26,24 @@ export function MediaManager({ property, disabled, bare = false }: { property: P
       api<Resource<PropertyMedia>>(`portal/properties/${property.id}/media`, { method: "POST", body: { type: "video", url } }),
     onSuccess: () => {
       message.success("Video added");
-      setVideoUrl("");
       refresh();
     },
     onError: (error) => message.error(errorMessage(error)),
+  });
+
+  /** Saves the new photo order at once; videos keep their place after the photos. */
+  const reorder = useMutation({
+    mutationFn: (photoIds: number[]) =>
+      api<Collection<PropertyMedia>>(`portal/properties/${property.id}/media/order`, { method: "PUT", body: { ids: [...photoIds, ...videos.map((video) => video.id)] } }),
+    onMutate: (photoIds) => {
+      // Show the new order straight away.
+      const byId = new Map(media.map((item) => [item.id, item]));
+      const ordered = photoIds.map((id, index) => ({ ...byId.get(id)!, is_cover: index === 0 }));
+      queryClient.setQueryData<Property>(["listing", String(property.id)], (current) => (current ? { ...current, media: [...ordered, ...videos] } : current));
+    },
+    onSuccess: () => message.success("Photo order saved"),
+    onError: (error) => message.error(errorMessage(error)),
+    onSettled: refresh,
   });
 
   const remove = useMutation({
@@ -40,64 +54,67 @@ export function MediaManager({ property, disabled, bare = false }: { property: P
 
   const content = (
     <>
-      <Image.PreviewGroup>
-        <div className="media-grid">
-          {photos.map((photo) => (
-            <div key={photo.id} className="media-tile">
-              <Image src={thumbnailUrl(photo)} preview={{ src: mediumUrl(photo) }} alt="Listing photo" />
-              {photo.is_cover && (
-                <Tag className="media-cover-badge" color="gold" icon={<StarFilled />}>
-                  Cover
-                </Tag>
-              )}
-              {!disabled && (
-                <div className="media-tile-actions">
-                  <Popconfirm title="Remove this photo?" onConfirm={() => remove.mutate(photo)}>
-                    <Button size="small" danger icon={<DeleteOutlined />} aria-label="Remove photo" />
-                  </Popconfirm>
-                </div>
-              )}
-            </div>
-          ))}
+      {photos.length > 0 && (
+        <>
+          <SortableThumbs
+            disabled={disabled || reorder.isPending}
+            items={photos.map((photo) => ({ key: photo.id, src: thumbnailUrl(photo), alt: "Listing photo" }))}
+            onReorder={(keys) => reorder.mutate(keys.map(Number))}
+            onRemove={(key) => {
+              const photo = photos.find((item) => item.id === key);
 
+              if (photo) {
+                modal.confirm({ title: "Remove this photo?", okText: "Remove", okButtonProps: { danger: true }, onOk: () => remove.mutateAsync(photo) });
+              }
+            }}
+          />
           {!disabled && (
-            <Upload
-              accept="image/jpeg,image/png,image/webp"
-              multiple
-              showUploadList={false}
-              customRequest={({ file, onSuccess, onError }) => {
-                const formData = new FormData();
-                formData.append("type", "image");
-                formData.append("file", file as Blob);
-                setUploading((count) => count + 1);
-
-                apiUpload<Resource<PropertyMedia>>(`portal/properties/${property.id}/media`, formData)
-                  .then((response) => {
-                    onSuccess?.(response);
-                    refresh();
-                  })
-                  .catch((error: Error) => {
-                    message.error(errorMessage(error));
-                    onError?.(error);
-                  })
-                  .finally(() => setUploading((count) => count - 1));
-              }}
-            >
-              <button type="button" className="upload-tile">
-                <PlusOutlined style={{ fontSize: 22 }} />
-                <span>{uploading > 0 ? `Uploading ${uploading}…` : "Add photos"}</span>
-                <small>JPG, PNG or WebP</small>
-              </button>
-            </Upload>
+            <Typography.Paragraph type="secondary" style={{ margin: "8px 0 0", fontSize: 12 }}>
+              <DragOutlined /> Drag photos (or use the arrows) to change their order. The first photo is the cover, and this order is the gallery on the property page.
+            </Typography.Paragraph>
           )}
-        </div>
-      </Image.PreviewGroup>
+        </>
+      )}
+
+      {!disabled && (
+        <Upload
+          accept="image/jpeg,image/png,image/webp"
+          multiple
+          showUploadList={false}
+          customRequest={({ file, onSuccess, onError }) => {
+            const formData = new FormData();
+            formData.append("type", "image");
+            formData.append("file", file as Blob);
+            setUploading((count) => count + 1);
+
+            apiUpload<Resource<PropertyMedia>>(`portal/properties/${property.id}/media`, formData)
+              .then((response) => {
+                onSuccess?.(response);
+                refresh();
+              })
+              .catch((error: Error) => {
+                message.error(errorMessage(error));
+                onError?.(error);
+              })
+              .finally(() => setUploading((count) => count - 1));
+          }}
+        >
+          <Button icon={<PlusOutlined />} loading={uploading > 0} className="lf-outline-btn" style={{ marginTop: 12 }}>
+            {uploading > 0 ? `Uploading ${uploading}…` : "Add photos"}
+          </Button>
+        </Upload>
+      )}
 
       {photos.length === 0 && disabled && <Empty description="No photos" />}
 
       <Typography.Title level={5} style={{ marginTop: 24 }}>
         <VideoCameraOutlined /> Video
       </Typography.Title>
+      {!disabled && videos.length === 0 && (
+        <Typography.Paragraph type="secondary" style={{ fontSize: 12 }}>
+          Upload a walkthrough to YouTube (or Vimeo) and paste its link here.
+        </Typography.Paragraph>
+      )}
       {videos.map((video) => (
         <Flex key={video.id} align="center" justify="space-between" gap={12} style={{ padding: "6px 0" }}>
           <Typography.Link href={video.url} target="_blank" rel="noopener noreferrer" ellipsis>
@@ -110,17 +127,7 @@ export function MediaManager({ property, disabled, bare = false }: { property: P
           )}
         </Flex>
       ))}
-      {!disabled && (
-        <Input.Search
-          placeholder="Paste a YouTube or Vimeo link"
-          enterButton="Add video"
-          value={videoUrl}
-          loading={addVideo.isPending}
-          onChange={(event) => setVideoUrl(event.target.value)}
-          onSearch={(value) => value.trim() && addVideo.mutate(value.trim())}
-          style={{ marginTop: 8 }}
-        />
-      )}
+      {!disabled && <VideoLinkInput loading={addVideo.isPending} onAdd={(url) => addVideo.mutateAsync(url)} />}
     </>
   );
 

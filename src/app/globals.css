@@ -1426,8 +1426,8 @@ a.count-row:hover .kpi-link {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--app-muted) 12%, transparent);
-  color: var(--app-muted);
+  background: var(--accent-tint);
+  color: var(--accent);
   font-size: 13px;
 }
 .lf-field-head {
@@ -1751,5 +1751,66 @@ a.count-row:hover .kpi-link {
 }
 .lf-serp-desc {
   font-size: 13px;
+  color: var(--app-muted);
+}
+
+/* ---------- Listing form: area presets, price units, sortable photos, rich text ---------- */
+.lf-area-presets {
+  margin-bottom: 12px;
+}
+.lf-price {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 130px;
+  gap: 8px;
+}
+.lf-thumb[draggable="true"] {
+  cursor: grab;
+}
+.lf-thumb.dragging {
+  opacity: 0.4;
+}
+.lf-thumb.drop-target {
+  outline: 2px dashed var(--accent);
+  outline-offset: 2px;
+}
+.lf-thumb-index {
+  background: rgba(0, 0, 0, 0.45);
+}
+.lf-thumb-grip {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  padding: 3px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 11px;
+}
+.lf-thumb .lf-thumb-moves {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  display: flex;
+  gap: 4px;
+}
+.lf-thumb .lf-thumb-moves button {
+  position: static;
+  width: 22px;
+  height: 22px;
+}
+.lf-thumb .lf-thumb-moves button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.lf-rich-text .tox-tinymce {
+  border-radius: 8px;
+}
+.lf-private-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: -12px;
+  margin-bottom: 16px;
+  font-size: 12px;
   color: var(--app-muted);
 }
