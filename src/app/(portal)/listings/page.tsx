@@ -93,6 +93,7 @@ function ListingCard({ property, showOwner = false }: { property: Property; show
         <span>{formatArea(property.area_size, property.area_unit)}</span>
         {property.bedrooms !== null && <span>{property.bedrooms} beds</span>}
         {property.bathrooms !== null && <span>{property.bathrooms} baths</span>}
+        {property.kitchens !== null && <span>{property.kitchens} kitchen{property.kitchens === 1 ? "" : "s"}</span>}
         {(property.leads_count ?? 0) > 0 && <span>💬 {property.leads_count} lead{property.leads_count === 1 ? "" : "s"}</span>}
       </div>
       <Typography.Text type="secondary" style={{ display: "block", fontSize: 12, margin: "8px 0 12px" }}>

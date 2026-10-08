@@ -21,6 +21,7 @@ import {
   GoldOutlined,
   HomeOutlined,
   IdcardOutlined,
+  CoffeeOutlined,
   InsuranceOutlined,
   KeyOutlined,
   LayoutOutlined,
@@ -84,6 +85,7 @@ export type ListingFormValues = {
   plot_number?: string | null;
   bedrooms?: number | null;
   bathrooms?: number | null;
+  kitchens?: number | null;
   year_built?: number | null;
   furnished?: FurnishedStatus | null;
   amenity_ids: number[];
@@ -127,6 +129,7 @@ export function propertyToFormValues(property: Property): ListingFormValues {
     plot_number: property.plot_number,
     bedrooms: property.bedrooms,
     bathrooms: property.bathrooms,
+    kitchens: property.kitchens,
     year_built: property.year_built,
     furnished: property.furnished,
     amenity_ids: (property.amenities ?? []).map((amenity) => amenity.id),
@@ -153,6 +156,7 @@ export function formValuesToPayload(values: ListingFormValues): Record<string, u
 
   if (values.category === "plot") {
     payload.bathrooms = null;
+    payload.kitchens = null;
     payload.year_built = null;
     payload.furnished = null;
   }
@@ -771,6 +775,11 @@ export function ListingForm({
           <Field icon={<InsuranceOutlined />} label="Bathrooms">
             <Form.Item name="bathrooms">
               <CountChips limit={50} disabled={disabled} />
+            </Form.Item>
+          </Field>
+          <Field icon={<CoffeeOutlined />} label="Kitchens">
+            <Form.Item name="kitchens">
+              <CountChips limit={20} disabled={disabled} />
             </Form.Item>
           </Field>
           <Field icon={<CalendarOutlined />} label="Year built" hint="Optional. Pick a recent year, or Other for any other year.">

@@ -213,6 +213,7 @@ export type Property = {
   longitude: string | null;
   bedrooms: number | null;
   bathrooms: number | null;
+  kitchens: number | null;
   floors: number | null;
   year_built: number | null;
   furnished: FurnishedStatus | null;
