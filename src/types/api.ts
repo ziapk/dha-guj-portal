@@ -187,6 +187,8 @@ export type PropertyMedia = {
 export type Property = {
   id: number;
   slug: string;
+  /** Random permanent code at the end of the public URL. */
+  ref: string;
   status: PropertyStatus;
   property_status: PropertyAvailability;
   purpose: PropertyPurpose;
@@ -229,7 +231,7 @@ export type Property = {
   is_premium?: boolean;
   premium_until?: string | null;
   is_urgent: boolean;
-  /** Permanent public path: /property/{id}/{slug}. */
+  /** Permanent public path: /property/{slug}-{ref}. */
   url?: string;
   public_url?: string;
   seo?: PropertySeoSettings;
