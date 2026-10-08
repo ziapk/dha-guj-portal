@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button, Card, Checkbox, Col, DatePicker, Empty, Flex, Form, Input, InputNumber, Row, Select, Typography, type FormInstance } from "antd";
 import dayjs, { type Dayjs } from "dayjs";
 import { NameChoice, Section, withCommas, withoutCommas } from "@/components/listing-form";
+import { RichTextEditor } from "@/components/rich-text-editor";
 import { groupAmenities } from "@/lib/amenities";
 import { api } from "@/lib/api-client";
 import { AREA_UNIT_LABELS, CONSTRUCTION_STATUS_LABELS, PROJECT_FEATURE_GROUP_LABELS, PROPERTY_CATEGORY_LABELS, formatPriceRange, toOptions } from "@/lib/labels";
@@ -504,8 +505,20 @@ export function ProjectForm({
                 </Form.Item>
               </Col>
             </Row>
-            <Form.Item name="description" label="Description" rules={[{ required: true }, { min: 30, message: "At least 30 characters" }]}>
-              <Input.TextArea rows={6} maxLength={10000} showCount placeholder="Describe the project: master plan, approvals, facilities, nearby landmarks and what makes it a good investment." />
+            <Form.Item
+              name="description"
+              label="Description"
+              rules={[
+                {
+                  // The editor returns HTML, so the length rule counts the text only.
+                  validator: (_, value?: string) =>
+                    (value ?? "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim().length >= 30
+                      ? Promise.resolve()
+                      : Promise.reject(new Error("Describe the project in at least 30 characters")),
+                },
+              ]}
+            >
+              <RichTextEditor height={360} placeholder="Describe the project: master plan, approvals, facilities, nearby landmarks and what makes it a good investment." />
             </Form.Item>
             <Row gutter={16}>
               <Col xs={24} sm={12}>
