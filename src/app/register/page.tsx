@@ -30,33 +30,38 @@ type RegisterValues = {
   terms: boolean;
 };
 
-const ACCOUNT_TYPES: { value: AccountType; title: string; text: string; icon: ReactNode; nameLabel: string; nameIcon: ReactNode; namePlaceholder: string }[] = [
+// Users only give their own name. Dealers give their name + agency, developers their name + company:
+// the business name is stored in `name` and the person's name in `contact_name`.
+const ACCOUNT_TYPES: {
+  value: AccountType;
+  title: string;
+  text: string;
+  icon: ReactNode;
+  personLabel: string;
+  company?: { label: string; icon: ReactNode; placeholder: string };
+}[] = [
   {
     value: "individual",
     title: "User",
     text: "Buy, Sell or Rent Properties",
     icon: <UserOutlined />,
-    nameLabel: "Full Name",
-    nameIcon: <UserOutlined />,
-    namePlaceholder: "Enter your full name",
+    personLabel: "Full Name",
   },
   {
     value: "agency",
     title: "Dealer",
     text: "List Properties & Manage Leads",
     icon: <BankOutlined />,
-    nameLabel: "Dealer Name",
-    nameIcon: <BankOutlined />,
-    namePlaceholder: "Enter dealer name",
+    personLabel: "Dealer Name",
+    company: { label: "Agency Name", icon: <BankOutlined />, placeholder: "Enter agency name" },
   },
   {
     value: "developer",
     title: "Developer",
     text: "Showcase Your Projects",
     icon: <ApartmentOutlined />,
-    nameLabel: "Company Name",
-    nameIcon: <ApartmentOutlined />,
-    namePlaceholder: "Enter company name",
+    personLabel: "Full Name",
+    company: { label: "Developer Company Name", icon: <ApartmentOutlined />, placeholder: "Enter developer company name" },
   },
 ];
 
@@ -199,34 +204,34 @@ export default function RegisterPage() {
           <AccountTypePicker />
         </Form.Item>
 
-        {accountType !== "individual" && (
-          <Form.Item name="name" label={selected.nameLabel} rules={[{ required: true, message: `Enter the ${selected.nameLabel.toLowerCase()}` }]}>
-            <Input prefix={selected.nameIcon} placeholder={selected.namePlaceholder} autoComplete="organization" />
-          </Form.Item>
-        )}
         <Row gutter={16}>
-          <Col xs={24} sm={12}>
+          <Col xs={24} sm={selected.company ? 12 : 24}>
             <Form.Item
-              name={accountType === "individual" ? "name" : "contact_name"}
-              label="Full Name"
-              rules={[{ required: true, message: "Enter your full name" }]}
+              name={selected.company ? "contact_name" : "name"}
+              label={selected.personLabel}
+              rules={[{ required: true, message: `Enter the ${selected.personLabel.toLowerCase()}` }]}
             >
-              <Input prefix={<UserOutlined />} placeholder="Enter your full name" autoComplete="name" />
+              <Input prefix={<UserOutlined />} placeholder={`Enter ${selected.company ? selected.personLabel.toLowerCase() : "your full name"}`} autoComplete="name" />
             </Form.Item>
           </Col>
-          <Col xs={24} sm={12}>
-            <Form.Item
-              name="email"
-              label="Email Address"
-              rules={[
-                { required: true, message: "Enter your email address" },
-                { type: "email", message: "Enter a valid email address" },
-              ]}
-            >
-              <Input prefix={<MailOutlined />} placeholder="Enter your email address" autoComplete="email" />
-            </Form.Item>
-          </Col>
+          {selected.company && (
+            <Col xs={24} sm={12}>
+              <Form.Item name="name" label={selected.company.label} rules={[{ required: true, message: `Enter the ${selected.company.label.toLowerCase()}` }]}>
+                <Input prefix={selected.company.icon} placeholder={selected.company.placeholder} autoComplete="organization" />
+              </Form.Item>
+            </Col>
+          )}
         </Row>
+        <Form.Item
+          name="email"
+          label="Email Address"
+          rules={[
+            { required: true, message: "Enter your email address" },
+            { type: "email", message: "Enter a valid email address" },
+          ]}
+        >
+          <Input prefix={<MailOutlined />} placeholder="Enter your email address" autoComplete="email" />
+        </Form.Item>
         <Form.Item
           name="phone"
           label="Mobile Number"
