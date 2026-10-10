@@ -6,6 +6,10 @@ import type {
   BannerStatus,
   AccountType,
   ConstructionStatus,
+  DeveloperType,
+  GalleryCategory,
+  SocialPlatform,
+  VerificationStatus,
   AreaUnit,
   FurnishedStatus,
   LeadStatus,
@@ -378,3 +382,31 @@ export function formatProjectPrice(from: number | null | undefined, to: number |
 
   return to === null || to === undefined || Number(to) === Number(from) ? formatCompactPrice(from) : `${formatCompactPrice(from)} – ${formatCompactPrice(to)}`;
 }
+
+export const DEVELOPER_TYPE_LABELS: Record<DeveloperType, string> = {
+  developer: "Developer",
+  construction: "Construction company",
+  developer_builder: "Developer & builder",
+};
+
+export const VERIFICATION_STATUS_LABELS: Record<VerificationStatus, string> = { unverified: "Not verified", pending: "Pending review", verified: "Verified" };
+
+export const SOCIAL_PLATFORM_LABELS: Record<SocialPlatform, string> = {
+  facebook: "Facebook",
+  instagram: "Instagram",
+  youtube: "YouTube",
+  tiktok: "TikTok",
+  linkedin: "LinkedIn",
+  x: "X (Twitter)",
+};
+
+export const GALLERY_CATEGORY_LABELS: Record<GalleryCategory, string> = {
+  projects: "Projects",
+  construction: "Construction",
+  completed_homes: "Completed homes",
+  architecture: "Architecture",
+  interior: "Interior",
+  exterior: "Exterior",
+  site_visits: "Site visits",
+  events: "Events",
+};

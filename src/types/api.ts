@@ -58,6 +58,8 @@ export type LeadStatus = "new" | "contacted" | "interested" | "closed" | "lost";
 export type ProjectStatus = "draft" | "pending" | "published" | "rejected" | "changes_requested" | "expired" | "archived";
 export type ConstructionStatus = "upcoming" | "under_construction" | "ready";
 export type ProjectMediaType = "image" | "video" | "brochure";
+/** A full project page, or a short portfolio showcase on the developer's page (all developer accounts can add). */
+export type ProjectKind = "full" | "portfolio";
 
 export type User = {
   id: number;
@@ -345,6 +347,7 @@ export type ProjectMedia = {
 /** A housing project posted by a developer account, with its unit types. */
 export type Project = {
   id: number;
+  kind: ProjectKind;
   slug: string;
 
   name: string;
@@ -381,8 +384,13 @@ export type Project = {
   latitude: string | null;
   longitude: string | null;
   location_description: string | null;
+  /** Short location line shown on cards, e.g. "Sector C, DHA Gujranwala". */
+  location: string | null;
 
   category: string | null;
+  /** What the project sells, e.g. "Luxury Villas". */
+  unit_type: string | null;
+  unit_size: string | null;
   property_type_ids: number[];
   total_land_area: string | null;
   project_size: string | null;
@@ -406,6 +414,8 @@ export type Project = {
   currency: string | null;
   price_disclaimer: string | null;
   price_updated_at: string | null;
+  /** The website shows "Price on request" instead of any price. */
+  hide_price: boolean;
 
   features: ProjectFeatures;
   units?: ProjectUnit[];
@@ -696,3 +706,167 @@ export type ListingLocation = {
   phases: { id: number; name: string }[];
   default_phase: string;
 };
+
+/** Icons the website can draw, offered as a picker in section forms. */
+export const PAGE_ICONS = [
+  "home", "building", "plot", "key", "chart", "shield", "users", "user", "star", "diamond",
+  "briefcase", "map", "pin", "phone", "whatsapp", "mail", "clock", "calendar", "chat", "search", "megaphone",
+] as const;
+
+export type PageIcon = (typeof PAGE_ICONS)[number];
+
+export type DeveloperType = "developer" | "construction" | "developer_builder";
+
+export type DeveloperSummary = {
+  id: number;
+  slug: string;
+  name: string;
+  company_type: DeveloperType;
+  logo_url: string | null;
+  public_url: string;
+};
+
+/** A developer or construction company in the directory, with its own public page (/developer/{slug}). */
+export type Developer = {
+  id: number;
+  /** The developer account whose projects show on this page. */
+  user_id?: number | null;
+  user?: { id: number; name: string; email: string | null } | null;
+  slug: string;
+  name: string;
+  company_type: DeveloperType;
+  tagline: string | null;
+  short_description: string | null;
+  /** Only on the detail endpoint. Sanitised HTML. */
+  description?: string;
+  /** Label, heading and extras per page section; a missing key falls back to the website's default text. */
+  sections?: Partial<Record<DeveloperSection, DeveloperSectionContent>>;
+  /** Final figures: typed overrides win, the rest are counted from live projects. */
+  stats?: Record<DeveloperStat, number | null>;
+  /** Only what the admin typed, so the form can tell an override from a counted figure. */
+  stats_overrides?: Partial<Record<DeveloperStat, number | null>>;
+  portfolio?: DeveloperPortfolioItem[];
+  history?: string | null;
+  mission?: string | null;
+  vision?: string | null;
+  core_values?: DeveloperListItem[];
+  expertise?: DeveloperListItem[];
+  leadership?: DeveloperLeader[];
+  team?: DeveloperTeamMember[];
+  gallery?: DeveloperGalleryItem[];
+  faqs?: DeveloperFaq[];
+  logo_url: string | null;
+  cover_url: string | null;
+
+  established_year: number | null;
+  registration_number: string | null;
+  legal_name: string | null;
+  registered_name: string | null;
+  ntn_number: string | null;
+  strn_number: string | null;
+  license_number: string | null;
+  license_authority: string | null;
+  business_type: string | null;
+  verification_status: VerificationStatus;
+  verification_badge_url: string | null;
+  city_id: number | null;
+  city?: City | null;
+  address: string | null;
+  google_maps_url: string | null;
+  highlights: string[];
+
+  phone: string | null;
+  whatsapp: string | null;
+  email: string | null;
+  website: string | null;
+  social_links: DeveloperSocialLink[];
+  business_hours: string | null;
+
+  meta_title: string | null;
+  meta_description: string | null;
+
+  /** Live projects, the number visitors see. */
+  projects_count?: number;
+  /** Every linked project, drafts and expired ones included. */
+  all_projects_count?: number;
+  public_url: string;
+
+  is_active: boolean;
+  is_featured: boolean;
+  is_verified: boolean;
+  show_in_directory: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+/** A core value or an area of expertise on a company page. */
+export type DeveloperListItem = { icon: PageIcon | null; title: string; text: string | null };
+
+/** A member of the "Our team" grid. */
+export type DeveloperTeamMember = {
+  name: string;
+  designation: string | null;
+  bio: string | null;
+  experience: string | null;
+  specialization: string | null;
+  photo_url: string | null;
+  email: string | null;
+  linkedin: string | null;
+  facebook: string | null;
+};
+
+/** A person in the large leadership block. */
+export type DeveloperLeader = DeveloperTeamMember & { quote: string | null; signature_url: string | null };
+
+export const DEVELOPER_SECTIONS = [
+  "overview",
+  "history",
+  "mission",
+  "vision",
+  "values",
+  "expertise",
+  "stats",
+  "projects",
+  "gallery",
+  "leadership",
+  "team",
+  "registration",
+  "contact",
+  "social",
+  "faqs",
+] as const;
+
+export type DeveloperSection = (typeof DEVELOPER_SECTIONS)[number];
+
+export type DeveloperSectionContent = {
+  label?: string | null;
+  heading?: string | null;
+  description?: string | null;
+  icon?: PageIcon | null;
+  image_url?: string | null;
+  button_label?: string | null;
+  button_url?: string | null;
+};
+
+export type DeveloperStat = "years_experience" | "total_projects" | "completed_projects" | "ongoing_projects" | "upcoming_projects" | "cities_covered" | "total_units";
+
+export type DeveloperPortfolioItem = { project_id: number; is_featured?: boolean };
+
+export type GalleryCategory = "projects" | "construction" | "completed_homes" | "architecture" | "interior" | "exterior" | "site_visits" | "events";
+
+export type DeveloperGalleryItem = {
+  url: string;
+  title?: string | null;
+  caption?: string | null;
+  alt?: string | null;
+  category?: GalleryCategory | null;
+};
+
+export type DeveloperFaq = { question: string; answer: string; is_active?: boolean };
+
+export type SocialPlatform = "facebook" | "instagram" | "youtube" | "tiktok" | "linkedin" | "x";
+
+export type DeveloperSocialLink = { platform: SocialPlatform; url: string; is_active?: boolean };
+
+export type VerificationStatus = "unverified" | "pending" | "verified";

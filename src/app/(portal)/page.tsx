@@ -3,6 +3,7 @@
 import {
   ApartmentOutlined,
   ArrowRightOutlined,
+  BankOutlined,
   ClockCircleOutlined,
   CrownOutlined,
   EyeOutlined,
@@ -30,7 +31,6 @@ import { LISTING_TABS, PROJECT_STATUS_COLORS, PROJECT_STATUS_LABELS, PROPERTY_ST
 import { coverPhoto, thumbnailUrl } from "@/lib/media";
 import type { ListingTabCounts, Paginated, PortalDashboard, Project, Property } from "@/types/api";
 
-
 function greeting(): string {
   const hour = new Date().getHours();
 
@@ -52,7 +52,13 @@ function KpiCard({ title, value, loading, icon, color, href }: { title: string; 
     <Card hoverable onClick={() => router.push(href)} style={{ height: "100%" }}>
       <Flex justify="space-between" align="flex-start" gap={12}>
         <Statistic title={title} value={value as number} loading={loading} />
-        <span className="kpi-icon" style={{ color, background: `color-mix(in srgb, ${color} 14%, transparent)` }}>
+        <span
+          className="kpi-icon"
+          style={{
+            color,
+            background: `color-mix(in srgb, ${color} 14%, transparent)`,
+          }}
+        >
           {icon}
         </span>
       </Flex>
@@ -94,7 +100,11 @@ export default function DashboardPage() {
 
   const recent = useQuery({
     queryKey: ["listings", "recent"],
-    queryFn: () => api<Paginated<Property>>("portal/properties", { query: { per_page: 5 } }).then((page) => page.data),
+    queryFn: () =>
+      api<Paginated<Property>>("portal/properties", {
+        query: { per_page: 5 },
+      }).then((page) => page.data),
+    enabled: me !== undefined && me.account_type !== "developer",
   });
 
   const screens = Grid.useBreakpoint();
@@ -102,6 +112,7 @@ export default function DashboardPage() {
   const tabCounts = useQuery({
     queryKey: ["listings", "counts"],
     queryFn: () => api<{ data: ListingTabCounts }>("portal/properties/counts").then((response) => response.data),
+    enabled: me !== undefined && me.account_type !== "developer",
   });
   const loading = dashboard.isLoading;
   const isAgency = me?.account_type === "agency";
@@ -133,7 +144,7 @@ export default function DashboardPage() {
               {isAgency
                 ? "Your whole team's listings, leads and plan credits at a glance."
                 : isDeveloper
-                  ? "Manage your projects and listings and keep an eye on your plan credits."
+                  ? "Manage your projects and company page and keep an eye on your plan credits."
                   : "Manage your listings and keep an eye on your plan credits."}
             </p>
           </div>
@@ -142,7 +153,7 @@ export default function DashboardPage() {
             {isDeveloper && (
               <Link href="/projects/new">
                 <Button className="hero-primary" icon={<PlusOutlined />}>
-                  Add project
+                  Add portfolio project
                 </Button>
               </Link>
             )}
@@ -151,14 +162,22 @@ export default function DashboardPage() {
                 <Button icon={<ApartmentOutlined />}>My projects</Button>
               </Link>
             )}
-            <Link href="/listings/new">
-              <Button className={isDeveloper ? undefined : "hero-primary"} icon={<PlusOutlined />}>
-                Add listing
-              </Button>
-            </Link>
-            <Link href="/listings">
-              <Button icon={<HomeOutlined />}>My listings</Button>
-            </Link>
+            {isDeveloper ? (
+              <Link href="/company-profile">
+                <Button icon={<BankOutlined />}>Company profile</Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/listings/new">
+                  <Button className="hero-primary" icon={<PlusOutlined />}>
+                    Add listing
+                  </Button>
+                </Link>
+                <Link href="/listings">
+                  <Button icon={<HomeOutlined />}>My listings</Button>
+                </Link>
+              </>
+            )}
             <Link href="/plan">
               <Button icon={<CrownOutlined />}>Plan & quota</Button>
             </Link>
@@ -182,21 +201,27 @@ export default function DashboardPage() {
       )}
 
       <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} xl={6}>
-          <KpiCard title="Active listings" value={data?.listings.by_status.published ?? 0} loading={loading} icon={<HomeOutlined />} color="#10b981" href="/listings?tab=active" />
-        </Col>
-        <Col xs={24} sm={12} xl={6}>
-          <KpiCard title="Pending review" value={data?.listings.by_status.pending ?? 0} loading={loading} icon={<ClockCircleOutlined />} color="#f59e0b" href="/listings?tab=pending" />
-        </Col>
+        {!isDeveloper && (
+          <>
+            <Col xs={24} sm={12} xl={6}>
+              <KpiCard title="Active listings" value={data?.listings.by_status.published ?? 0} loading={loading} icon={<HomeOutlined />} color="#10b981" href="/listings?tab=active" />
+            </Col>
+            <Col xs={24} sm={12} xl={6}>
+              <KpiCard title="Pending review" value={data?.listings.by_status.pending ?? 0} loading={loading} icon={<ClockCircleOutlined />} color="#f59e0b" href="/listings?tab=pending" />
+            </Col>
+          </>
+        )}
         <Col xs={24} sm={12} xl={6}>
           <KpiCard title="New leads" value={data?.leads.new ?? 0} loading={loading} icon={<MessageOutlined />} color="#1a73e8" href="/leads" />
         </Col>
-        <Col xs={24} sm={12} xl={6}>
-          <KpiCard title="Listing credits left" value={creditsValue} loading={loading} icon={<ThunderboltOutlined />} color="var(--accent)" href="/plan" />
-        </Col>
+        {!isDeveloper && (
+          <Col xs={24} sm={12} xl={6}>
+            <KpiCard title="Listing credits left" value={creditsValue} loading={loading} icon={<ThunderboltOutlined />} color="var(--accent)" href="/plan" />
+          </Col>
+        )}
       </Row>
 
-      {(data?.listings.by_status.changes_requested ?? 0) > 0 && (
+      {!isDeveloper && (data?.listings.by_status.changes_requested ?? 0) > 0 && (
         <Alert
           type="warning"
           showIcon
@@ -212,19 +237,19 @@ export default function DashboardPage() {
       )}
 
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-        <Col xs={24} md={12} xl={8}>
-          <Card title="Listings by status" extra={<Link href="/listings">All ({data?.listings.total ?? 0})</Link>} style={{ height: "100%" }}>
-            {loading ? (
-              <Skeleton active />
-            ) : !data || data.listings.total === 0 ? (
-              <Empty description="No listings yet" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-            ) : (
-              LISTING_TABS.map((tab) => (
-                <CountRow key={tab.key} href={`/listings?tab=${tab.key}`} value={tabCounts.data?.[tab.key] ?? 0} label={tab.label} />
-              ))
-            )}
-          </Card>
-        </Col>
+        {!isDeveloper && (
+          <Col xs={24} md={12} xl={8}>
+            <Card title="Listings by status" extra={<Link href="/listings">All ({data?.listings.total ?? 0})</Link>} style={{ height: "100%" }}>
+              {loading ? (
+                <Skeleton active />
+              ) : !data || data.listings.total === 0 ? (
+                <Empty description="No listings yet" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+              ) : (
+                LISTING_TABS.map((tab) => <CountRow key={tab.key} href={`/listings?tab=${tab.key}`} value={tabCounts.data?.[tab.key] ?? 0} label={tab.label} />)
+              )}
+            </Card>
+          </Col>
+        )}
 
         <Col xs={24} md={12} xl={8}>
           <Card title="Leads" extra={<Link href="/leads?status=all">All leads</Link>} style={{ marginBottom: 16 }}>
@@ -243,9 +268,30 @@ export default function DashboardPage() {
               <Skeleton active paragraph={{ rows: 2 }} />
             ) : (
               <>
-                <CountRow label={<><EyeOutlined /> Views</>} value={data.stats.views} />
-                <CountRow label={<><PhoneOutlined /> Phone clicks</>} value={data.stats.phone_clicks} />
-                <CountRow label={<><WhatsAppOutlined /> WhatsApp clicks</>} value={data.stats.whatsapp_clicks} />
+                <CountRow
+                  label={
+                    <>
+                      <EyeOutlined /> Views
+                    </>
+                  }
+                  value={data.stats.views}
+                />
+                <CountRow
+                  label={
+                    <>
+                      <PhoneOutlined /> Phone clicks
+                    </>
+                  }
+                  value={data.stats.phone_clicks}
+                />
+                <CountRow
+                  label={
+                    <>
+                      <WhatsAppOutlined /> WhatsApp clicks
+                    </>
+                  }
+                  value={data.stats.whatsapp_clicks}
+                />
               </>
             )}
           </Card>
@@ -347,7 +393,7 @@ export default function DashboardPage() {
             <Empty description="You have no projects yet">
               <Link href="/projects/new">
                 <Button type="primary" icon={<PlusOutlined />}>
-                  Add your first project
+                  Add your first portfolio project
                 </Button>
               </Link>
             </Empty>
@@ -372,41 +418,43 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      <Card title="Recent listings" extra={<Link href="/listings">All listings</Link>} style={{ marginTop: 16 }}>
-        {recent.isLoading ? (
-          <Skeleton active />
-        ) : recent.isError ? (
-          <Alert type="error" showIcon title="Could not load your recent listings" description={errorMessage(recent.error)} />
-        ) : (recent.data ?? []).length === 0 ? (
-          <Empty description="You have no listings yet">
-            <Link href="/listings/new">
-              <Button type="primary" icon={<PlusOutlined />}>
-                Add your first listing
-              </Button>
-            </Link>
-          </Empty>
-        ) : (
-          recent.data?.map((property) => {
-            const cover = coverPhoto(property.media);
-
-            return (
-              <Link key={property.id} href={`/listings/${property.id}`} className="activity-item" style={{ color: "inherit", alignItems: "center" }}>
-                <Avatar shape="square" size={52} src={thumbnailUrl(cover)} icon={<HomeOutlined />} style={{ borderRadius: 10, flex: "none" }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <Typography.Text strong ellipsis style={{ display: "block" }}>
-                    {property.title}
-                  </Typography.Text>
-                  <Typography.Text type="secondary" style={{ fontSize: 13 }}>
-                    {formatCompactPrice(property.price)} · {property.city?.name}
-                    {property.society ? `, ${property.society.name}` : ""}
-                  </Typography.Text>
-                </div>
-                <Tag color={PROPERTY_STATUS_COLORS[property.status]}>{PROPERTY_STATUS_LABELS[property.status]}</Tag>
+      {!isDeveloper && (
+        <Card title="Recent listings" extra={<Link href="/listings">All listings</Link>} style={{ marginTop: 16 }}>
+          {recent.isLoading ? (
+            <Skeleton active />
+          ) : recent.isError ? (
+            <Alert type="error" showIcon title="Could not load your recent listings" description={errorMessage(recent.error)} />
+          ) : (recent.data ?? []).length === 0 ? (
+            <Empty description="You have no listings yet">
+              <Link href="/listings/new">
+                <Button type="primary" icon={<PlusOutlined />}>
+                  Add your first listing
+                </Button>
               </Link>
-            );
-          })
-        )}
-      </Card>
+            </Empty>
+          ) : (
+            recent.data?.map((property) => {
+              const cover = coverPhoto(property.media);
+
+              return (
+                <Link key={property.id} href={`/listings/${property.id}`} className="activity-item" style={{ color: "inherit", alignItems: "center" }}>
+                  <Avatar shape="square" size={52} src={thumbnailUrl(cover)} icon={<HomeOutlined />} style={{ borderRadius: 10, flex: "none" }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <Typography.Text strong ellipsis style={{ display: "block" }}>
+                      {property.title}
+                    </Typography.Text>
+                    <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+                      {formatCompactPrice(property.price)} · {property.city?.name}
+                      {property.society ? `, ${property.society.name}` : ""}
+                    </Typography.Text>
+                  </div>
+                  <Tag color={PROPERTY_STATUS_COLORS[property.status]}>{PROPERTY_STATUS_LABELS[property.status]}</Tag>
+                </Link>
+              );
+            })
+          )}
+        </Card>
+      )}
     </>
   );
 }

@@ -2,7 +2,7 @@
 
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Card, Checkbox, Col, DatePicker, Empty, Flex, Form, Input, InputNumber, Row, Select, Typography, type FormInstance } from "antd";
+import { Button, Card, Checkbox, Col, DatePicker, Empty, Flex, Form, Input, InputNumber, Row, Select, Switch, Typography, type FormInstance } from "antd";
 import dayjs, { type Dayjs } from "dayjs";
 import { NameChoice, Section, withCommas, withoutCommas } from "@/components/listing-form";
 import { RichTextEditor } from "@/components/rich-text-editor";
@@ -109,6 +109,7 @@ export type ProjectFormValues = {
   price_from?: number | null;
   price_to?: number | null;
   price_disclaimer?: string | null;
+  hide_price: boolean;
 
   amenity_ids: number[];
   features: ProjectFeatures;
@@ -129,6 +130,7 @@ const EMPTY_UNIT: ProjectUnitFormValues = { area_unit: "marla" };
 
 export const EMPTY_PROJECT: Partial<ProjectFormValues> = {
   construction_status: "under_construction",
+  hide_price: false,
   amenity_ids: [],
   features: {},
   units: [EMPTY_UNIT],
@@ -183,6 +185,7 @@ export function projectToFormValues(project: Project): ProjectFormValues {
     price_from: project.price_from,
     price_to: project.price_to,
     price_disclaimer: project.price_disclaimer,
+    hide_price: project.hide_price,
 
     amenity_ids: (project.amenities ?? []).map((amenity) => amenity.id),
     features: project.features ?? {},
@@ -694,6 +697,16 @@ export function ProjectForm({
               <Col xs={24} sm={8}>
                 <Form.Item name="price_disclaimer" label="Price disclaimer" rules={[{ max: 500 }]}>
                   <Input placeholder="e.g. Prices change with the market." />
+                </Form.Item>
+              </Col>
+              <Col xs={24}>
+                <Form.Item
+                  name="hide_price"
+                  label="Hide prices on the website"
+                  valuePropName="checked"
+                  extra="Buyers see “Price on request” and contact you instead. Every price, unit price and payment plan amount stays hidden."
+                >
+                  <Switch />
                 </Form.Item>
               </Col>
             </Row>

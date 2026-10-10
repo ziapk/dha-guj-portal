@@ -45,6 +45,7 @@ function ProjectCard({ project }: { project: Project }) {
             <Tag color={CONSTRUCTION_STATUS_COLORS[project.construction_status]} variant="solid">
               {CONSTRUCTION_STATUS_LABELS[project.construction_status]}
             </Tag>
+            {project.kind === "full" && <Tag variant="solid">Full project</Tag>}
           </div>
         </div>
       }
@@ -58,9 +59,13 @@ function ProjectCard({ project }: { project: Project }) {
           <EnvironmentOutlined /> {project.society ? `${project.society.name}, ` : ""}
           {project.city?.name}
         </span>
-        <span>
-          {unitsCount} unit type{unitsCount === 1 ? "" : "s"}
-        </span>
+        {project.kind === "portfolio" ? (
+          <span>{project.unit_type ?? "Portfolio project"}</span>
+        ) : (
+          <span>
+            {unitsCount} unit type{unitsCount === 1 ? "" : "s"}
+          </span>
+        )}
         {project.completion_date && (
           <span>
             <CalendarOutlined /> {formatDate(project.completion_date)}
@@ -113,11 +118,11 @@ function ProjectsContent() {
     <>
       <PageHeader
         title="Projects"
-        subtitle="Your housing projects with their unit types and payment plans, from drafts to live"
+        subtitle="Your portfolio: the projects shown on your company page, from drafts to live"
         extra={
           <Link href="/projects/new">
             <Button type="primary" icon={<PlusOutlined />}>
-              Add project
+              Add portfolio project
             </Button>
           </Link>
         }
@@ -152,7 +157,7 @@ function ProjectsContent() {
           <Empty description={status === "all" ? "You have not added a project yet" : "No projects in this tab"}>
             <Link href="/projects/new">
               <Button type="primary" icon={<PlusOutlined />}>
-                Add a project
+                Add a portfolio project
               </Button>
             </Link>
           </Empty>

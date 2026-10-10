@@ -10,7 +10,7 @@ import { PUBLIC_WEB_URL } from "@/lib/constants";
 import type { Project } from "@/types/api";
 
 /** The project's page on the Public Web; only reachable while it is live. */
-export const projectWebUrl = (project: Project) => `${PUBLIC_WEB_URL}/projects/${project.slug}`;
+export const projectWebUrl = (project: Project) => `${PUBLIC_WEB_URL}/project/${project.slug}`;
 
 export const isProjectLive = (project: Project) => project.status === "published" && (!project.expires_at || dayjs(project.expires_at).isAfter(dayjs()));
 

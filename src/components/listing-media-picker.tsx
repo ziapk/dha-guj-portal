@@ -20,15 +20,18 @@ export function ListingMediaPicker({
   value,
   onChange,
   disabled,
+  subject = "property",
 }: {
   value: PendingMedia;
   onChange: Dispatch<SetStateAction<PendingMedia>>;
   disabled?: boolean;
+  /** What the photos are of, for the labels. */
+  subject?: "property" | "project";
 }) {
   const { message } = App.useApp();
   return (
     <>
-      <Field icon={<PictureOutlined />} label="Upload images of your property">
+      <Field icon={<PictureOutlined />} label={`Upload images of your ${subject}`}>
         <div className="lf-upload">
           <div className="lf-upload-actions">
             <PictureOutlined className="lf-upload-art" />
@@ -75,7 +78,7 @@ export function ListingMediaPicker({
               onRemove={(key) => onChange((prev) => ({ ...prev, photos: prev.photos.filter((photo) => photo.uid !== key) }))}
             />
             <div className="lf-field-hint" style={{ marginTop: 8 }}>
-              Drag photos (or use the arrows) to set their order. It becomes the gallery order on the property page.
+              Drag photos (or use the arrows) to set their order. It becomes the gallery order on the website.
             </div>
           </>
         )}
@@ -85,7 +88,7 @@ export function ListingMediaPicker({
         </div>
       </Field>
 
-      <Field icon={<VideoCameraOutlined />} label="Add a video of your property" hint="Upload the video to YouTube (or Vimeo) and paste the link here.">
+      <Field icon={<VideoCameraOutlined />} label={`Add a video of your ${subject}`} hint="Upload the video to YouTube (or Vimeo) and paste the link here.">
         {value.videos.map((url) => (
           <Flex key={url} align="center" justify="space-between" gap={12} style={{ padding: "4px 0" }}>
             <Typography.Text ellipsis>{url}</Typography.Text>

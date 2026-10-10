@@ -234,7 +234,7 @@ export const withCommas = (value: number | string | undefined) => `${value ?? ""
 export const withoutCommas = (value: string | undefined) => Number((value ?? "").replace(/,/g, ""));
 
 /** The visible text of rich text HTML, for length checks. */
-function htmlText(html: string | undefined): string {
+export function htmlText(html: string | undefined): string {
   if (!html) {
     return "";
   }
@@ -245,7 +245,7 @@ function htmlText(html: string | undefined): string {
 /* ---------- Building blocks for the listing form layout ---------- */
 
 /** A full-width card: icon and title on the left, the fields on the right. */
-function FormBlock({ icon, title, hint, children }: { icon: ReactNode; title: string; hint?: string; children: ReactNode }) {
+export function FormBlock({ icon, title, hint, children }: { icon: ReactNode; title: string; hint?: string; children: ReactNode }) {
   return (
     <section className="lf-block">
       <div className="lf-block-head">
@@ -292,7 +292,7 @@ export function Field({
 type ChipOption<T> = { value: T; label: ReactNode; icon?: ReactNode };
 
 /** Pill buttons for a single choice. Works as a Form.Item control (value / onChange). */
-function ChipGroup<T extends string | number>({
+export function ChipGroup<T extends string | number>({
   options,
   value,
   onChange,
@@ -459,7 +459,7 @@ function FeatureChips({ features, value = [], onChange, disabled }: { features: 
 }
 
 /** A read-only row of the listing's current state, e.g. "Featured · until 12 Oct". */
-function StateRow({ label, value, hint }: { label: string; value: ReactNode; hint?: ReactNode }) {
+export function StateRow({ label, value, hint }: { label: string; value: ReactNode; hint?: ReactNode }) {
   return (
     <div className="lf-state-row">
       <div>

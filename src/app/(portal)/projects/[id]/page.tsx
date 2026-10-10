@@ -2,12 +2,14 @@
 
 import { EyeOutlined, MessageOutlined, SendOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, App, Button, Flex, Form, Result, Skeleton, Space, Tag, Typography } from "antd";
+import { Alert, App, Button, Flex, Form, Result, Skeleton, Space, Tag, Typography, type FormInstance } from "antd";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { DeveloperOnly } from "@/components/developer-only";
+import { ProjectPhotoManager } from "@/components/media-manager";
 import { PageHeader } from "@/components/page-header";
+import { PortfolioProjectForm, portfolioValuesToPayload, projectToPortfolioValues, type PortfolioFormValues } from "@/components/portfolio-project-form";
 import { ProjectActions } from "@/components/project-actions";
 import { ProjectForm, formValuesToPayload, projectToFormValues, type ProjectFormValues } from "@/components/project-form";
 import { ProjectMediaManager } from "@/components/project-media-manager";
@@ -30,7 +32,7 @@ function StatusBanner({ project, onResubmit }: { project: Project; onResubmit: (
         <Alert
           type="info"
           showIcon
-          title="Draft — add unit types, photos and brochures, then submit for review."
+          title={project.kind === "portfolio" ? "Draft — add photos, then submit for review." : "Draft — add unit types, photos and brochures, then submit for review."}
           description={`Submitting uses 1 Project Listings credit${creditsLeft === null ? "" : ` (you have ${projectCredits(creditsLeft)} left)`}. Drafts are free.`}
         />
       );
@@ -114,22 +116,37 @@ function ProjectDetailContent() {
   const router = useRouter();
   const { message } = App.useApp();
   const queryClient = useQueryClient();
-  const [form] = Form.useForm<ProjectFormValues>();
+  const [fullForm] = Form.useForm<ProjectFormValues>();
+  const [portfolioForm] = Form.useForm<PortfolioFormValues>();
 
   const project = useQuery({
     queryKey: ["project", id],
     queryFn: () => api<Resource<Project>>(`portal/projects/${id}`).then((response) => response.data),
   });
 
+  // New projects are portfolio ones with the short form; older full projects keep the full form.
+  const isPortfolio = project.data?.kind === "portfolio";
+  const form = (isPortfolio ? portfolioForm : fullForm) as FormInstance;
+
   useEffect(() => {
-    if (project.data) {
-      form.setFieldsValue(projectToFormValues(project.data));
+    if (!project.data) {
+      return;
     }
-  }, [project.data, form]);
+
+    if (project.data.kind === "portfolio") {
+      portfolioForm.setFieldsValue(projectToPortfolioValues(project.data));
+    } else {
+      fullForm.setFieldsValue(projectToFormValues(project.data));
+    }
+  }, [project.data, fullForm, portfolioForm]);
 
   const save = useMutation({
     // PUT with the full form, so the units list always replaces what is stored.
-    mutationFn: (values: ProjectFormValues) => api<Resource<Project>>(`portal/projects/${id}`, { method: "PUT", body: formValuesToPayload(values) }),
+    mutationFn: (values: ProjectFormValues | PortfolioFormValues) =>
+      api<Resource<Project>>(`portal/projects/${id}`, {
+        method: "PUT",
+        body: isPortfolio ? portfolioValuesToPayload(values as PortfolioFormValues) : formValuesToPayload(values as ProjectFormValues),
+      }),
     onSuccess: (response) => {
       message.success("Changes saved");
       queryClient.setQueryData(["project", id], response.data);
@@ -218,12 +235,36 @@ function ProjectDetailContent() {
         <StatusBanner project={current} onResubmit={() => void resubmit()} />
       </div>
 
-      <ProjectMediaManager project={current} disabled={locked} />
+      {isPortfolio ? (
+        <>
+          <Typography.Title level={4} style={{ margin: "24px 0 12px" }}>
+            Portfolio project
+          </Typography.Title>
+          <PortfolioProjectForm
+            form={portfolioForm}
+            disabled={locked}
+            project={current}
+            media={<ProjectPhotoManager project={current} disabled={locked} />}
+            onFinish={(values) => save.mutate(values)}
+          />
+          {!locked && (
+            <div className="lf-footer">
+              <Button type="primary" size="large" loading={save.isPending} onClick={() => form.submit()}>
+                Save changes
+              </Button>
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          <ProjectMediaManager project={current} disabled={locked} />
 
-      <Typography.Title level={4} style={{ margin: "24px 0 12px" }}>
-        Project details
-      </Typography.Title>
-      <ProjectForm form={form} disabled={locked} onFinish={(values) => save.mutate(values)} />
+          <Typography.Title level={4} style={{ margin: "24px 0 12px" }}>
+            Project details
+          </Typography.Title>
+          <ProjectForm form={fullForm} disabled={locked} onFinish={(values) => save.mutate(values)} />
+        </>
+      )}
     </>
   );
 }

@@ -1,6 +1,7 @@
 import {
   AreaChartOutlined,
   ApartmentOutlined,
+  BankOutlined,
   CreditCardOutlined,
   CrownOutlined,
   DashboardOutlined,
@@ -22,6 +23,9 @@ export type NavItem = { href: string; label: string; icon: ReactNode; keywords?:
 
 export type NavGroup = { title: string; items: NavItem[] };
 
+/** Developer accounts post projects, not property listings. */
+const LISTING_ACCOUNTS: AccountType[] = ["individual", "agency", "agent"];
+
 export const NAV_GROUPS: NavGroup[] = [
   {
     title: "Overview",
@@ -33,15 +37,22 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     title: "Listings",
     items: [
-      { href: "/listings", label: "My Listings", icon: <HomeOutlined />, keywords: "properties ads" },
-      { href: "/listings/new", label: "Add Listing", icon: <PlusCircleOutlined />, keywords: "post create sell rent new" },
+      { href: "/listings", label: "My Listings", icon: <HomeOutlined />, keywords: "properties ads", accountTypes: LISTING_ACCOUNTS },
+      { href: "/listings/new", label: "Add Listing", icon: <PlusCircleOutlined />, keywords: "post create sell rent new", accountTypes: LISTING_ACCOUNTS },
     ],
   },
   {
     title: "Projects",
     items: [
       { href: "/projects", label: "Projects", icon: <ApartmentOutlined />, keywords: "developer builder housing scheme units payment plan", accountTypes: ["developer"] },
-      { href: "/projects/new", label: "Add Project", icon: <PlusCircleOutlined />, keywords: "post create developer builder housing scheme new", accountTypes: ["developer"] },
+      { href: "/projects/new", label: "Add Portfolio Project", icon: <PlusCircleOutlined />, keywords: "post create developer builder housing scheme new portfolio showcase", accountTypes: ["developer"] },
+      {
+        href: "/company-profile",
+        label: "Company Profile",
+        icon: <BankOutlined />,
+        keywords: "developer company page profile logo cover about history mission vision team leadership gallery faqs registration contact social",
+        accountTypes: ["developer"],
+      },
     ],
   },
   {

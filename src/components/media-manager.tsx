@@ -8,22 +8,55 @@ import { api, apiUpload } from "@/lib/api-client";
 import { errorMessage } from "@/lib/form-errors";
 import { thumbnailUrl } from "@/lib/media";
 import { SortableThumbs, VideoLinkInput } from "@/components/listing-inputs";
-import type { Collection, Property, PropertyMedia, Resource } from "@/types/api";
+import type { Collection, Project, ProjectMedia, Property, PropertyMedia, Resource } from "@/types/api";
 
 /** Upload, preview and remove a listing's photos and video links. `bare` leaves out the card, e.g. inside a form section. */
 export function MediaManager({ property, disabled, bare = false }: { property: Property; disabled: boolean; bare?: boolean }) {
+  return <PhotoAndVideoManager endpoint={`portal/properties/${property.id}/media`} queryKey={["listing", String(property.id)]} media={property.media ?? []} disabled={disabled} bare={bare} />;
+}
+
+/** The same photo and video editor for a portfolio project, inside its form section. */
+export function ProjectPhotoManager({ project, disabled }: { project: Project; disabled: boolean }) {
+  return <PhotoAndVideoManager endpoint={`portal/projects/${project.id}/media`} queryKey={["project", String(project.id)]} media={project.media ?? []} disabled={disabled} bare listKey="projects" />;
+}
+
+type Media = PropertyMedia | ProjectMedia;
+
+function PhotoAndVideoManager({
+  endpoint,
+  queryKey,
+  media,
+  disabled,
+  bare,
+  listKey,
+}: {
+  /** The owner's media endpoint, e.g. portal/properties/5/media. */
+  endpoint: string;
+  /** The query holding the owner, whose `media` is updated in place on reorder. */
+  queryKey: string[];
+  media: Media[];
+  disabled: boolean;
+  bare: boolean;
+  /** A list query to refresh as well, so its cover photos stay current. */
+  listKey?: string;
+}) {
   const { message, modal } = App.useApp();
   const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(0);
 
-  const media = property.media ?? [];
   const photos = media.filter((item) => item.type === "image");
   const videos = media.filter((item) => item.type === "video");
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ["listing", String(property.id)] });
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey });
+
+    if (listKey) {
+      queryClient.invalidateQueries({ queryKey: [listKey] });
+    }
+  };
 
   const addVideo = useMutation({
     mutationFn: (url: string) =>
-      api<Resource<PropertyMedia>>(`portal/properties/${property.id}/media`, { method: "POST", body: { type: "video", url } }),
+      api<Resource<Media>>(endpoint, { method: "POST", body: { type: "video", url } }),
     onSuccess: () => {
       message.success("Video added");
       refresh();
@@ -34,12 +67,12 @@ export function MediaManager({ property, disabled, bare = false }: { property: P
   /** Saves the new photo order at once; videos keep their place after the photos. */
   const reorder = useMutation({
     mutationFn: (photoIds: number[]) =>
-      api<Collection<PropertyMedia>>(`portal/properties/${property.id}/media/order`, { method: "PUT", body: { ids: [...photoIds, ...videos.map((video) => video.id)] } }),
+      api<Collection<Media>>(`${endpoint}/order`, { method: "PUT", body: { ids: [...photoIds, ...videos.map((video) => video.id)] } }),
     onMutate: (photoIds) => {
       // Show the new order straight away.
       const byId = new Map(media.map((item) => [item.id, item]));
       const ordered = photoIds.map((id, index) => ({ ...byId.get(id)!, is_cover: index === 0 }));
-      queryClient.setQueryData<Property>(["listing", String(property.id)], (current) => (current ? { ...current, media: [...ordered, ...videos] } : current));
+      queryClient.setQueryData<{ media?: Media[] }>(queryKey, (current) => (current ? { ...current, media: [...ordered, ...videos] } : current));
     },
     onSuccess: () => message.success("Photo order saved"),
     onError: (error) => message.error(errorMessage(error)),
@@ -47,7 +80,7 @@ export function MediaManager({ property, disabled, bare = false }: { property: P
   });
 
   const remove = useMutation({
-    mutationFn: (item: PropertyMedia) => api(`portal/properties/${property.id}/media/${item.id}`, { method: "DELETE" }),
+    mutationFn: (item: Media) => api(`${endpoint}/${item.id}`, { method: "DELETE" }),
     onSuccess: refresh,
     onError: (error) => message.error(errorMessage(error)),
   });
@@ -58,7 +91,7 @@ export function MediaManager({ property, disabled, bare = false }: { property: P
         <>
           <SortableThumbs
             disabled={disabled || reorder.isPending}
-            items={photos.map((photo) => ({ key: photo.id, src: thumbnailUrl(photo), alt: "Listing photo" }))}
+            items={photos.map((photo) => ({ key: photo.id, src: thumbnailUrl(photo), alt: "Photo" }))}
             onReorder={(keys) => reorder.mutate(keys.map(Number))}
             onRemove={(key) => {
               const photo = photos.find((item) => item.id === key);
@@ -70,7 +103,7 @@ export function MediaManager({ property, disabled, bare = false }: { property: P
           />
           {!disabled && (
             <Typography.Paragraph type="secondary" style={{ margin: "8px 0 0", fontSize: 12 }}>
-              <DragOutlined /> Drag photos (or use the arrows) to change their order. The first photo is the cover, and this order is the gallery on the property page.
+              <DragOutlined /> Drag photos (or use the arrows) to change their order. The first photo is the cover, and this order is the gallery on the website.
             </Typography.Paragraph>
           )}
         </>
@@ -87,7 +120,7 @@ export function MediaManager({ property, disabled, bare = false }: { property: P
             formData.append("file", file as Blob);
             setUploading((count) => count + 1);
 
-            apiUpload<Resource<PropertyMedia>>(`portal/properties/${property.id}/media`, formData)
+            apiUpload<Resource<Media>>(endpoint, formData)
               .then((response) => {
                 onSuccess?.(response);
                 refresh();
