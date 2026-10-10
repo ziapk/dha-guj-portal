@@ -12,6 +12,7 @@ import { ProjectActions } from "@/components/project-actions";
 import { api } from "@/lib/api-client";
 import { errorMessage } from "@/lib/form-errors";
 import { CONSTRUCTION_STATUS_COLORS, CONSTRUCTION_STATUS_LABELS, PROJECT_STATUS_COLORS, PROJECT_STATUS_LABELS, formatDate, formatProjectPrice } from "@/lib/labels";
+import { sizedImage } from "@/lib/media";
 import type { Paginated, Project, ProjectStatus } from "@/types/api";
 
 const TABS: { key: ProjectStatus | "all"; label: string }[] = [
@@ -26,7 +27,7 @@ const TABS: { key: ProjectStatus | "all"; label: string }[] = [
 
 function ProjectCard({ project }: { project: Project }) {
   const router = useRouter();
-  const cover = project.cover_url ?? project.media?.find((item) => item.type === "image")?.thumbnail_url ?? null;
+  const cover = sizedImage(project.cover_url, "thumbnail") ?? project.media?.find((item) => item.type === "image")?.thumbnail_url ?? null;
   const unitsCount = project.units_count ?? project.units?.length ?? 0;
 
   return (

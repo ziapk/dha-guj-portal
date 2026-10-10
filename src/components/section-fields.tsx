@@ -4,6 +4,7 @@ import { ArrowDownOutlined, ArrowUpOutlined, DeleteOutlined, PictureOutlined, Pl
 import { App, Alert, Avatar, Button, Flex, Select, Typography, Upload } from "antd";
 import { useEffect, useRef, useState } from "react";
 import { SortableThumbs } from "@/components/listing-inputs";
+import { sizedImage } from "@/lib/media";
 import { uploadErrorMessage, uploadForm } from "@/lib/upload";
 import { PageIconGlyph } from "@/components/page-icons";
 import { PAGE_ICONS, type PageIcon } from "@/types/api";
@@ -89,7 +90,7 @@ export function SectionImage({
   return (
     <Flex vertical gap={8}>
       <Flex align="center" gap={12}>
-        <Avatar shape={shape} size={64} src={value ?? undefined} icon={<PictureOutlined />} />
+        <Avatar shape={shape} size={64} src={sizedImage(value, "thumbnail") ?? undefined} icon={<PictureOutlined />} />
         <Flex gap={8} wrap>
           <Upload
             accept="image/png,image/jpeg,image/webp"
@@ -219,7 +220,7 @@ export function ImageListField({ value, onChange, max = 30 }: { value?: string[]
     <Flex vertical gap={8}>
       {images.length > 0 && (
         <SortableThumbs
-          items={images.map((url, index) => ({ key: url, src: url, alt: `Image ${index + 1}` }))}
+          items={images.map((url, index) => ({ key: url, src: sizedImage(url, "thumbnail"), alt: `Image ${index + 1}` }))}
           onReorder={(keys) => onChange?.(keys.map(String))}
           onRemove={(key) => onChange?.(images.filter((url) => url !== key))}
         />

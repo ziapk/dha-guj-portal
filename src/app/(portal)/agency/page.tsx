@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/page-header";
 import { api, apiUpload } from "@/lib/api-client";
 import { applyFormErrors, errorMessage } from "@/lib/form-errors";
 import { PROFILE_STATUS_COLORS, PROFILE_STATUS_LABELS } from "@/lib/labels";
+import { sizedImage } from "@/lib/media";
 import type { AgencyProfile, City, Collection, Resource } from "@/types/api";
 
 type AgencyResponse = Resource<AgencyProfile> & { is_listed: boolean; public_url: string | null };
@@ -208,7 +209,7 @@ function AgencyForm({ response }: { response: AgencyResponse }) {
         <Flex vertical gap={16}>
           <Card title="Logo">
             <Flex align="center" gap={16}>
-              <Avatar shape="square" size={80} src={profile.logo_url ?? undefined} icon={<ShopOutlined />} />
+              <Avatar shape="square" size={80} src={sizedImage(profile.logo_url, "thumbnail") ?? undefined} icon={<ShopOutlined />} />
               <ImageUpload field="logo" label={profile.logo_url ? "Replace logo" : "Upload logo"} disabled={!profile.id} />
             </Flex>
             <Typography.Paragraph type="secondary" style={{ margin: "12px 0 0", fontSize: 12 }}>
@@ -218,7 +219,7 @@ function AgencyForm({ response }: { response: AgencyResponse }) {
 
           <Card title="Cover photo">
             {profile.cover_url && (
-              <Image src={profile.cover_url} alt="Agency cover" width="100%" style={{ aspectRatio: "3 / 1", objectFit: "cover", borderRadius: 8, marginBottom: 12 }} />
+              <Image src={sizedImage(profile.cover_url, "medium")} preview={{ src: profile.cover_url }} alt="Agency cover" width="100%" style={{ aspectRatio: "3 / 1", objectFit: "cover", borderRadius: 8, marginBottom: 12 }} />
             )}
             <ImageUpload field="cover" label={profile.cover_url ? "Replace cover photo" : "Upload cover photo"} disabled={!profile.id} />
             <Typography.Paragraph type="secondary" style={{ margin: "12px 0 0", fontSize: 12 }}>

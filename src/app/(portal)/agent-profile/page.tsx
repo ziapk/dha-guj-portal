@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/page-header";
 import { api, apiUpload } from "@/lib/api-client";
 import { applyFormErrors, errorMessage } from "@/lib/form-errors";
 import { PROFILE_STATUS_COLORS, PROFILE_STATUS_LABELS } from "@/lib/labels";
+import { sizedImage } from "@/lib/media";
 import type { AgentProfile, City, Collection, Resource } from "@/types/api";
 
 type AgentProfileResponse = Resource<AgentProfile> & { is_listed: boolean; public_url: string | null };
@@ -256,7 +257,7 @@ function AgentProfileForm({ response }: { response: AgentProfileResponse }) {
         <Flex vertical gap={16}>
           <Card title="Profile photo">
             <Flex align="center" gap={16}>
-              <Avatar size={80} src={profile.photo_url ?? undefined} icon={<UserOutlined />} />
+              <Avatar size={80} src={sizedImage(profile.photo_url, "thumbnail") ?? undefined} icon={<UserOutlined />} />
               <Upload
                 accept="image/png,image/jpeg,image/webp"
                 showUploadList={false}

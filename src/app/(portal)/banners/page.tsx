@@ -12,6 +12,7 @@ import { remainingFor, useQuotas } from "@/hooks/use-quotas";
 import { ApiError, api, apiUpload } from "@/lib/api-client";
 import { applyFormErrors, errorMessage } from "@/lib/form-errors";
 import { BANNER_PLACEMENT_HINTS, BANNER_PLACEMENT_LABELS, BANNER_STATUS_COLORS, BANNER_STATUS_LABELS, formatDate } from "@/lib/labels";
+import { sizedImage } from "@/lib/media";
 import type { Banner, BannerPlacement, BannerStatus, Collection, Resource } from "@/types/api";
 
 const MAX_IMAGE_MB = 4;
@@ -182,7 +183,7 @@ function BannersContent() {
       title: "Banner",
       render: (_, banner) => (
         <Flex align="center" gap={12}>
-          <Avatar shape="square" size={56} src={banner.image_url ?? undefined} icon={<PictureOutlined />} style={{ width: 96, borderRadius: 8, flex: "none" }} alt={banner.title} />
+          <Avatar shape="square" size={56} src={sizedImage(banner.image_url, "thumbnail") ?? undefined} icon={<PictureOutlined />} style={{ width: 96, borderRadius: 8, flex: "none" }} alt={banner.title} />
           <div style={{ minWidth: 0 }}>
             <Typography.Text strong ellipsis style={{ display: "block", maxWidth: 260 }}>
               {banner.title}

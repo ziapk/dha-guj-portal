@@ -28,7 +28,7 @@ import { useMe } from "@/hooks/use-me";
 import { api } from "@/lib/api-client";
 import { errorMessage } from "@/lib/form-errors";
 import { LISTING_TABS, PROJECT_STATUS_COLORS, PROJECT_STATUS_LABELS, PROPERTY_STATUS_COLORS, PROPERTY_STATUS_LABELS, formatCompactPrice, formatDate, formatProjectPrice } from "@/lib/labels";
-import { coverPhoto, thumbnailUrl } from "@/lib/media";
+import { coverPhoto, sizedImage, thumbnailUrl } from "@/lib/media";
 import type { ListingTabCounts, Paginated, PortalDashboard, Project, Property } from "@/types/api";
 
 function greeting(): string {
@@ -400,7 +400,7 @@ export default function DashboardPage() {
           ) : (
             projects.data?.data.map((project) => (
               <Link key={project.id} href={`/projects/${project.id}`} className="activity-item" style={{ color: "inherit", alignItems: "center" }}>
-                <Avatar shape="square" size={52} src={project.cover_url ?? undefined} icon={<ApartmentOutlined />} style={{ borderRadius: 10, flex: "none" }} />
+                <Avatar shape="square" size={52} src={sizedImage(project.cover_url, "thumbnail") ?? undefined} icon={<ApartmentOutlined />} style={{ borderRadius: 10, flex: "none" }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <Typography.Text strong ellipsis style={{ display: "block" }}>
                     {project.name}

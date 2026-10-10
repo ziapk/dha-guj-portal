@@ -14,3 +14,16 @@ export function thumbnailUrl(media: PropertyMedia | ProjectMedia | undefined): s
 export function mediumUrl(media: PropertyMedia | ProjectMedia | undefined): string | undefined {
   return media ? media.medium_url || media.url : undefined;
 }
+
+export type ImageSize = "thumbnail" | "medium" | "full";
+
+const SIZE_SUFFIX = { thumbnail: "-480.webp", medium: "-1280.webp" } as const;
+
+/** Smaller copy of an uploaded image: the API stores {name}-full.{ext} with -1280.webp and -480.webp beside it. Other URLs come back unchanged. */
+export function sizedImage<T extends string | null | undefined>(url: T, size: ImageSize): T {
+  if (!url || size === "full") {
+    return url;
+  }
+
+  return url.replace(/-full\.[a-z0-9]+(?=$|\?)/i, SIZE_SUFFIX[size]) as T;
+}

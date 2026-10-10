@@ -16,6 +16,7 @@ import {
   SOCIAL_PLATFORM_LABELS,
   toOptions,
 } from "@/lib/labels";
+import { sizedImage } from "@/lib/media";
 import { uploadErrorMessage, uploadForm } from "@/lib/upload";
 import type {
   City,
@@ -316,10 +317,10 @@ function ImageUpload({
     <Flex vertical gap={10}>
       {type === "cover" && url ? (
         // eslint-disable-next-line @next/next/no-img-element -- a preview of an uploaded file on the API's storage
-        <img src={url} alt="" style={{ width: "100%", aspectRatio: "3 / 1", objectFit: "cover", borderRadius: 8 }} />
+        <img src={sizedImage(url, "medium")} alt="" style={{ width: "100%", aspectRatio: "3 / 1", objectFit: "cover", borderRadius: 8 }} />
       ) : null}
       <Flex align="center" gap={14}>
-        {type === "logo" && <Avatar shape="square" size={72} src={url ?? undefined} icon={<BuildOutlined />} style={{ background: url ? "#fff" : undefined }} />}
+        {type === "logo" && <Avatar shape="square" size={72} src={sizedImage(url, "thumbnail") ?? undefined} icon={<BuildOutlined />} style={{ background: url ? "#fff" : undefined }} />}
         <Upload
           accept="image/png,image/jpeg,image/webp"
           showUploadList={false}
