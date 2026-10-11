@@ -22,6 +22,9 @@ export function ProjectPhotoManager({ project, disabled }: { project: Project; d
 
 type Media = PropertyMedia | ProjectMedia;
 
+/** Largest photo the API accepts, in MB. */
+const MAX_PHOTO_MB = 20;
+
 function PhotoAndVideoManager({
   endpoint,
   queryKey,
@@ -114,6 +117,14 @@ function PhotoAndVideoManager({
           accept="image/jpeg,image/png,image/webp"
           multiple
           showUploadList={false}
+          beforeUpload={(file) => {
+            if (file.size > MAX_PHOTO_MB * 1024 * 1024) {
+              message.warning(`${file.name} is larger than ${MAX_PHOTO_MB} MB and was skipped.`);
+              return Upload.LIST_IGNORE;
+            }
+
+            return true;
+          }}
           customRequest={({ file, onSuccess, onError }) => {
             const formData = new FormData();
             formData.append("type", "image");

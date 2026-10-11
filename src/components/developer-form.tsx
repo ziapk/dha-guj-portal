@@ -39,7 +39,7 @@ import type {
 } from "@/types/api";
 
 /** Largest logo or cover image the API accepts, in MB. */
-const MAX_IMAGE_MB = 5;
+const MAX_IMAGE_MB = 20;
 
 /** Most entries the API accepts in the core values, expertise and team lists. */
 const MAX_ITEMS = 20;

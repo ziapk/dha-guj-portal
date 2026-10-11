@@ -44,6 +44,10 @@ async function handleResponse<T>(response: Response): Promise<T> {
   const payload = await response.json().catch(() => ({}));
 
   if (!response.ok) {
+    if (response.status === 413) {
+      throw new ApiError(413, "The file is too large to upload.");
+    }
+
     throw new ApiError(response.status, payload.message ?? "Something went wrong.", payload.errors ?? {}, payload.code);
   }
 

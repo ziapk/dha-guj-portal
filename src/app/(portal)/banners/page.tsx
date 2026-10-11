@@ -15,7 +15,7 @@ import { BANNER_PLACEMENT_HINTS, BANNER_PLACEMENT_LABELS, BANNER_STATUS_COLORS, 
 import { sizedImage } from "@/lib/media";
 import type { Banner, BannerPlacement, BannerStatus, Collection, Resource } from "@/types/api";
 
-const MAX_IMAGE_MB = 4;
+const MAX_IMAGE_MB = 20;
 const PLACEMENTS = Object.keys(BANNER_PLACEMENT_LABELS) as BannerPlacement[];
 
 type BannerValues = { title: string; placement: BannerPlacement; link_url?: string; image: UploadFile[] };

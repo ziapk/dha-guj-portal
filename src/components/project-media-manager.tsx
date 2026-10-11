@@ -11,6 +11,9 @@ import type { Project, ProjectMedia, ProjectMediaType, Resource } from "@/types/
 /** Per-project limits enforced by the API. */
 export const PROJECT_MEDIA_LIMITS: Record<ProjectMediaType, number> = { image: 40, video: 5, brochure: 5 };
 
+/** Largest upload the API accepts per type, in MB. */
+const MAX_UPLOAD_MB: Record<"image" | "brochure", number> = { image: 20, brochure: 20 };
+
 const thumbnail = (media: ProjectMedia) => media.thumbnail_url || media.url;
 const medium = (media: ProjectMedia) => media.medium_url || media.url;
 
@@ -47,6 +50,13 @@ export function ProjectMediaManager({ project, disabled }: { project: Project; d
   });
 
   function upload(type: "image" | "brochure", file: Blob, onSuccess?: (response: unknown) => void, onError?: (error: Error) => void) {
+    if (file.size > MAX_UPLOAD_MB[type] * 1024 * 1024) {
+      const error = new Error(`${file instanceof File ? file.name : "The file"} is larger than ${MAX_UPLOAD_MB[type]} MB and was skipped.`);
+      message.warning(error.message);
+      onError?.(error);
+      return;
+    }
+
     const formData = new FormData();
     formData.append("type", type);
     formData.append("file", file);
@@ -108,7 +118,7 @@ export function ProjectMediaManager({ project, disabled }: { project: Project; d
               <button type="button" className="upload-tile">
                 <PlusOutlined style={{ fontSize: 22 }} />
                 <span>{uploading.image > 0 ? `Uploading ${uploading.image}…` : "Add photos"}</span>
-                <small>{photos.length === 0 ? "The first photo is the cover" : "JPG, PNG or WebP"}</small>
+                <small>{photos.length === 0 ? "The first photo is the cover" : `JPG, PNG or WebP, up to ${MAX_UPLOAD_MB.image} MB`}</small>
               </button>
             </Upload>
           )}
@@ -179,7 +189,7 @@ export function ProjectMediaManager({ project, disabled }: { project: Project; d
       )}
       {!disabled && brochures.length < PROJECT_MEDIA_LIMITS.brochure && (
         <Typography.Text type="secondary" style={{ display: "block", fontSize: 12, marginTop: 4 }}>
-          PDF up to 20 MB, e.g. price list, payment plan or master plan.
+          PDF up to {MAX_UPLOAD_MB.brochure} MB, e.g. price list, payment plan or master plan.
         </Typography.Text>
       )}
     </Card>

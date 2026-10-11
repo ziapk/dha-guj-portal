@@ -10,7 +10,7 @@ import { PageIconGlyph } from "@/components/page-icons";
 import { PAGE_ICONS, type PageIcon } from "@/types/api";
 
 /** Largest section image the API accepts, in MB. */
-const MAX_IMAGE_MB = 5;
+const MAX_IMAGE_MB = 20;
 
 /** Posts one image to the company page image endpoint and returns its URL. */
 async function uploadContentImage(file: File): Promise<string> {

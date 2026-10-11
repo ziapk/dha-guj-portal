@@ -42,7 +42,7 @@ const SOCIAL_FIELDS = [
 ] as const;
 
 /** Upload one agency image (logo or cover) and put the updated profile in the cache. */
-function ImageUpload({ field, label, disabled, accept = "image/png,image/jpeg,image/webp" }: { field: "logo" | "cover"; label: string; disabled: boolean; accept?: string }) {
+function ImageUpload({ field, label, maxMb, disabled, accept = "image/png,image/jpeg,image/webp" }: { field: "logo" | "cover"; label: string; maxMb: number; disabled: boolean; accept?: string }) {
   const { message } = App.useApp();
   const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
@@ -52,6 +52,14 @@ function ImageUpload({ field, label, disabled, accept = "image/png,image/jpeg,im
       accept={accept}
       showUploadList={false}
       disabled={disabled || uploading}
+      beforeUpload={(file) => {
+        if (file.size > maxMb * 1024 * 1024) {
+          message.error(`The ${field === "logo" ? "logo" : "cover photo"} must be ${maxMb} MB or smaller.`);
+          return Upload.LIST_IGNORE;
+        }
+
+        return true;
+      }}
       customRequest={({ file, onSuccess, onError }) => {
         const formData = new FormData();
         formData.append(field, file as Blob);
@@ -210,10 +218,10 @@ function AgencyForm({ response }: { response: AgencyResponse }) {
           <Card title="Logo">
             <Flex align="center" gap={16}>
               <Avatar shape="square" size={80} src={sizedImage(profile.logo_url, "thumbnail") ?? undefined} icon={<ShopOutlined />} />
-              <ImageUpload field="logo" label={profile.logo_url ? "Replace logo" : "Upload logo"} disabled={!profile.id} />
+              <ImageUpload field="logo" maxMb={20} label={profile.logo_url ? "Replace logo" : "Upload logo"} disabled={!profile.id} />
             </Flex>
             <Typography.Paragraph type="secondary" style={{ margin: "12px 0 0", fontSize: 12 }}>
-              {profile.id ? "Square PNG, JPG or WebP, up to 2 MB." : "Save your agency details first."}
+              {profile.id ? "Square PNG, JPG or WebP, up to 20 MB." : "Save your agency details first."}
             </Typography.Paragraph>
           </Card>
 
@@ -221,9 +229,9 @@ function AgencyForm({ response }: { response: AgencyResponse }) {
             {profile.cover_url && (
               <Image src={sizedImage(profile.cover_url, "medium")} preview={{ src: profile.cover_url }} alt="Agency cover" width="100%" style={{ aspectRatio: "3 / 1", objectFit: "cover", borderRadius: 8, marginBottom: 12 }} />
             )}
-            <ImageUpload field="cover" label={profile.cover_url ? "Replace cover photo" : "Upload cover photo"} disabled={!profile.id} />
+            <ImageUpload field="cover" maxMb={20} label={profile.cover_url ? "Replace cover photo" : "Upload cover photo"} disabled={!profile.id} />
             <Typography.Paragraph type="secondary" style={{ margin: "12px 0 0", fontSize: 12 }}>
-              {profile.id ? "Wide photo behind your page header, e.g. 1600×600. JPG, PNG or WebP, up to 4 MB." : "Save your agency details first."}
+              {profile.id ? "Wide photo behind your page header, e.g. 1600×600. JPG, PNG or WebP, up to 20 MB." : "Save your agency details first."}
             </Typography.Paragraph>
           </Card>
 

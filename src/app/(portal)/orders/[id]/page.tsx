@@ -81,6 +81,9 @@ function CouponBox({ orderId, couponCode }: { orderId: number; couponCode: strin
   );
 }
 
+/** Largest receipt the API accepts, in MB. */
+const MAX_RECEIPT_MB = 5;
+
 const STEP_BY_STATUS = { pending_payment: 1, awaiting_approval: 2, paid: 3, cancelled: 1, refunded: 3 } as const;
 
 export default function OrderPage() {
@@ -325,14 +328,20 @@ export default function OrderPage() {
               label="Receipt (photo or PDF)"
               valuePropName="fileList"
               getValueFromEvent={(event: { fileList?: UploadFile[] } | UploadFile[]) => (Array.isArray(event) ? event : event?.fileList)}
-              rules={[{ required: true, message: "Attach your receipt" }]}
+              rules={[
+                { required: true, message: "Attach your receipt" },
+                {
+                  validator: (_, files?: UploadFile[]) =>
+                    files?.[0]?.size && files[0].size > MAX_RECEIPT_MB * 1024 * 1024 ? Promise.reject(new Error(`The receipt is larger than ${MAX_RECEIPT_MB} MB`)) : Promise.resolve(),
+                },
+              ]}
             >
               <Upload.Dragger beforeUpload={() => false} maxCount={1} accept="image/jpeg,image/png,image/webp,application/pdf">
                 <p className="ant-upload-drag-icon">
                   <InboxOutlined />
                 </p>
                 <p className="ant-upload-text">Click or drag your receipt here</p>
-                <p className="ant-upload-hint">JPG, PNG, WebP or PDF, up to 5 MB</p>
+                <p className="ant-upload-hint">JPG, PNG, WebP or PDF, up to {MAX_RECEIPT_MB} MB</p>
               </Upload.Dragger>
             </Form.Item>
             <Button type="primary" htmlType="submit" size="large" loading={upload.isPending}>

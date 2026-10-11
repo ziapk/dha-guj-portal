@@ -36,6 +36,9 @@ type AgentProfileValues = {
 };
 
 /** Starting points for the expertise picker; agents can type their own as well. */
+/** Largest profile photo the API accepts, in MB. */
+const MAX_PHOTO_MB = 20;
+
 const EXPERTISE_SUGGESTIONS = [
   "DHA Gujranwala",
   "Residential Properties",
@@ -262,6 +265,14 @@ function AgentProfileForm({ response }: { response: AgentProfileResponse }) {
                 accept="image/png,image/jpeg,image/webp"
                 showUploadList={false}
                 disabled={!profile.id || uploading}
+                beforeUpload={(file) => {
+                  if (file.size > MAX_PHOTO_MB * 1024 * 1024) {
+                    message.error(`The photo must be ${MAX_PHOTO_MB} MB or smaller.`);
+                    return Upload.LIST_IGNORE;
+                  }
+
+                  return true;
+                }}
                 customRequest={({ file, onSuccess, onError }) => {
                   const formData = new FormData();
                   formData.append("image", file as Blob);
@@ -286,7 +297,7 @@ function AgentProfileForm({ response }: { response: AgentProfileResponse }) {
               </Upload>
             </Flex>
             <Typography.Paragraph type="secondary" style={{ margin: "12px 0 0", fontSize: 12 }}>
-              {profile.id ? "A square head-and-shoulders photo works best." : "Save your details first."}
+              {profile.id ? `A square head-and-shoulders photo works best. JPG, PNG or WebP, up to ${MAX_PHOTO_MB} MB.` : "Save your details first."}
             </Typography.Paragraph>
           </Card>
 

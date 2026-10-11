@@ -8,7 +8,7 @@ import { Field, QualityTip } from "@/components/listing-form";
 
 const PHOTO_TARGET = 5;
 /** Matches the API default (listings.max_photo_size_kb). */
-const MAX_PHOTO_MB = 5;
+const MAX_PHOTO_MB = 20;
 
 export type PendingMedia = { photos: UploadFile[]; videos: string[] };
 
