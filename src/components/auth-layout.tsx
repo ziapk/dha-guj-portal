@@ -76,7 +76,7 @@ export function AuthLayout({ title, subtitle, children, topAction, wide }: AuthL
           <Button type="text" aria-label="Toggle dark mode" icon={resolvedMode === "dark" ? <SunOutlined /> : <MoonOutlined />} onClick={toggleMode} />
         </div>
 
-        <div style={{ width: "100%", maxWidth: wide ? 600 : 420 }}>
+        <div className={wide ? "login-form-inner is-wide" : "login-form-inner"}>
           <div className="login-mobile-brand">
             <BrandMark />
             <Typography.Text strong style={{ fontSize: 16 }}>
@@ -85,7 +85,7 @@ export function AuthLayout({ title, subtitle, children, topAction, wide }: AuthL
           </div>
 
           <h2 className="login-title">{title}</h2>
-          <Typography.Paragraph type="secondary" style={{ fontSize: 16, marginBottom: 28 }}>
+          <Typography.Paragraph type="secondary" className="login-subtitle" style={{ fontSize: 16, marginBottom: 28 }}>
             {subtitle}
           </Typography.Paragraph>
 

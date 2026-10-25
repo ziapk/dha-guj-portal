@@ -590,6 +590,7 @@ kbd {
 /* ---------- Login / Register ---------- */
 .login-shell {
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
   gap: 0;
@@ -742,6 +743,15 @@ kbd {
   margin-bottom: 24px;
 }
 
+.login-form-inner {
+  width: 100%;
+  max-width: 420px;
+}
+
+.login-form-inner.is-wide {
+  max-width: 600px;
+}
+
 /* Account type picker on the register page */
 .account-type-grid {
   display: grid;
@@ -822,10 +832,30 @@ kbd {
   color: var(--app-text);
 }
 
+/* Small laptops: give the form more room so side-by-side fields do not get cramped. */
+@media (max-width: 1199px) {
+  .login-shell {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  }
+
+  .login-brand {
+    padding: 40px 36px 32px;
+  }
+
+  .login-form-wrap {
+    padding: 88px 32px 40px;
+  }
+
+  .login-lead {
+    font-size: 16px;
+  }
+}
+
 @media (max-width: 991px) {
   .login-shell {
     grid-template-columns: minmax(0, 1fr);
     padding: 0;
+    background: var(--app-surface);
   }
 
   .login-brand {
@@ -833,8 +863,9 @@ kbd {
   }
 
   .login-form-wrap {
+    align-items: flex-start;
     border-radius: 0;
-    padding: 72px 16px 32px;
+    padding: 80px 24px 40px;
   }
 
   .login-mobile-brand {
@@ -845,17 +876,51 @@ kbd {
 }
 
 @media (max-width: 575px) {
+  .login-form-wrap {
+    padding: 72px 16px 32px;
+  }
+
+  .login-topbar {
+    top: 14px;
+    right: 12px;
+    gap: 4px;
+  }
+
+  .login-mobile-brand {
+    margin-bottom: 20px;
+  }
+
+  .login-subtitle {
+    font-size: 15px !important;
+    margin-bottom: 20px !important;
+  }
+
   .account-type-grid {
     gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .account-type-card {
+    padding: 14px 4px 12px;
+  }
+
+  .account-type-icon {
+    font-size: 24px;
+    margin-bottom: 2px;
+  }
+
+  .account-type-card strong {
+    font-size: 14px;
   }
 
   .account-type-card small {
     display: none;
   }
 
-  .login-topbar {
-    right: 12px;
-    gap: 4px;
+  .account-type-check {
+    top: 4px;
+    right: 4px;
+    font-size: 16px;
   }
 
   .login-topbar-hint {
