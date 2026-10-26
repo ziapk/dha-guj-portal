@@ -303,20 +303,20 @@ export const BANNER_PLACEMENT_LABELS: Record<BannerPlacement, string> = {
 };
 
 export const BANNER_PLACEMENT_HINTS: Record<BannerPlacement, string> = {
-  home_top: "Wide banner under the home page search. Most visitors see it. Suggested size 1200 × 300 px.",
-  search_top: "Wide banner above the search results, seen by active buyers. Suggested size 1200 × 200 px.",
-  search_sidebar: "Tall banner beside the search results on larger screens. Suggested size 300 × 600 px.",
-  listing_sidebar: "Banner beside a property's details, where buyers decide to call. Suggested size 300 × 250 px.",
-  projects_top: "Wide banner on the projects list, seen by buyers comparing projects. Suggested size 1200 × 200 px.",
-  project_sidebar: "Banner beside a project's details and payment plans. Suggested size 300 × 250 px.",
-  agents_top: "Wide banner on the agents and dealers lists, seen by people looking for help to buy or sell. Suggested size 1200 × 200 px.",
-  agent_sidebar: "Banner on agent and dealer profile pages. Suggested size 300 × 250 px.",
-  developers_top: "Wide banner on the developers list. Suggested size 1200 × 200 px.",
-  blog_top: "Wide banner on the blog home, seen by readers of guides and market news. Suggested size 1200 × 200 px.",
-  blog_sidebar: "Banner beside blog articles, seen while people read. Suggested size 300 × 250 px.",
-  maps_top: "Wide banner on the society maps pages, seen by people checking plot locations. Suggested size 1200 × 200 px.",
-  rates_top: "Wide banner on the file rates page, seen by buyers checking today's prices. Suggested size 1200 × 200 px.",
-  wanted_sidebar: "Banner beside the buyer requirements list, seen by agents and sellers. Suggested size 300 × 250 px.",
+  home_top: "Wide banner under the home page search. Most visitors see it.",
+  search_top: "Wide banner above the search results, seen by active buyers.",
+  search_sidebar: "Tall banner beside the search results on larger screens.",
+  listing_sidebar: "Banner beside a property's details, where buyers decide to call.",
+  projects_top: "Wide banner on the projects list, seen by buyers comparing projects.",
+  project_sidebar: "Banner beside a project's details and payment plans.",
+  agents_top: "Wide banner on the agents and dealers lists, seen by people looking for help to buy or sell.",
+  agent_sidebar: "Banner on agent and dealer profile pages.",
+  developers_top: "Wide banner on the developers list.",
+  blog_top: "Wide banner on the blog home, seen by readers of guides and market news.",
+  blog_sidebar: "Banner beside blog articles, seen while people read.",
+  maps_top: "Wide banner on the society maps pages, seen by people checking plot locations.",
+  rates_top: "Wide banner on the file rates page, seen by buyers checking today's prices.",
+  wanted_sidebar: "Banner beside the buyer requirements list, seen by agents and sellers.",
 };
 
 export const BANNER_STATUS_LABELS: Record<BannerStatus, string> = {

@@ -13,18 +13,43 @@ import { ApiError, api, apiUpload } from "@/lib/api-client";
 import { applyFormErrors, errorMessage } from "@/lib/form-errors";
 import { BANNER_PLACEMENT_HINTS, BANNER_PLACEMENT_LABELS, BANNER_STATUS_COLORS, BANNER_STATUS_LABELS, formatDate } from "@/lib/labels";
 import { sizedImage } from "@/lib/media";
-import type { Banner, BannerPlacement, BannerStatus, Collection, Resource } from "@/types/api";
+import type { Banner, BannerPlacement, BannerSize, BannerStatus, Collection, Resource } from "@/types/api";
 
 const MAX_IMAGE_MB = 20;
 const PLACEMENTS = Object.keys(BANNER_PLACEMENT_LABELS) as BannerPlacement[];
 
 type BannerValues = { title: string; placement: BannerPlacement; link_url?: string; image: UploadFile[] };
 
-function RequestBannerModal({ onClose, onQuotaExceeded }: { onClose: () => void; onQuotaExceeded: () => void }) {
+type BannerList = Collection<Banner> & { meta?: { sizes?: Partial<Record<BannerPlacement, BannerSize>> } };
+
+const fetchBanners = () => api<BannerList>("portal/banners");
+
+/** Width ÷ height of the chosen image, read in the browser; null until it loads or when it cannot be read. */
+async function imageRatio(file: File): Promise<number | null> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const ratio = bitmap.width / bitmap.height;
+    bitmap.close();
+
+    return ratio;
+  } catch {
+    return null;
+  }
+}
+
+function sizeText(size: BannerSize | undefined): string {
+  return size ? `${size.width} × ${size.height} px` : "";
+}
+
+function RequestBannerModal({ sizes, onClose, onQuotaExceeded }: { sizes: Partial<Record<BannerPlacement, BannerSize>>; onClose: () => void; onQuotaExceeded: () => void }) {
   const { message } = App.useApp();
   const queryClient = useQueryClient();
   const [form] = Form.useForm<BannerValues>();
   const placement = Form.useWatch("placement", form);
+  const [ratio, setRatio] = useState<number | null>(null);
+  const size = placement ? sizes[placement] : undefined;
+  // Warn (without blocking) when the image's shape is more than 10% off the slot's, since it will be cropped.
+  const wrongShape = ratio !== null && size !== undefined && Math.abs(ratio / (size.width / size.height) - 1) > 0.1;
 
   const create = useMutation({
     mutationFn: (values: BannerValues) => {
@@ -80,6 +105,7 @@ function RequestBannerModal({ onClose, onQuotaExceeded }: { onClose: () => void;
                   </Radio>
                   <Typography.Text type="secondary" style={{ display: "block", fontSize: 12, marginInlineStart: 24 }}>
                     {BANNER_PLACEMENT_HINTS[value]}
+                    {sizes[value] && ` Size ${sizeText(sizes[value])}.`}
                   </Typography.Text>
                 </div>
               ))}
@@ -100,8 +126,19 @@ function RequestBannerModal({ onClose, onQuotaExceeded }: { onClose: () => void;
           name="image"
           label="Banner image"
           valuePropName="fileList"
-          getValueFromEvent={(event: { fileList: UploadFile[] }) => event.fileList.slice(-1)}
-          extra={`JPG, PNG or WebP up to ${MAX_IMAGE_MB} MB. ${placement ? BANNER_PLACEMENT_HINTS[placement].split(". ").pop() : ""} Keep text large and short so it reads on phones.`}
+          getValueFromEvent={(event: { fileList: UploadFile[] }) => {
+            const files = event.fileList.slice(-1);
+            const file = files[0]?.originFileObj;
+
+            setRatio(null);
+
+            if (file) {
+              imageRatio(file).then(setRatio);
+            }
+
+            return files;
+          }}
+          extra={`JPG, PNG or WebP up to ${MAX_IMAGE_MB} MB.${size ? ` Use ${sizeText(size)}, or the same shape larger; other shapes are cropped to fit.` : ""} Keep text large and short so it reads on phones.`}
           rules={[
             { required: true, message: "Choose an image" },
             {
@@ -117,6 +154,7 @@ function RequestBannerModal({ onClose, onQuotaExceeded }: { onClose: () => void;
             <p className="ant-upload-text">Click or drop your banner image here</p>
           </Upload.Dragger>
         </Form.Item>
+        {wrongShape && size && <Alert type="warning" showIcon title={`This image is a different shape from the ${sizeText(size)} slot, so its edges will be cut off. Resize it to ${sizeText(size)} to show all of it.`} />}
       </Form>
     </Modal>
   );
@@ -146,10 +184,8 @@ function BannersContent() {
   const quotas = useQuotas();
   const [requesting, setRequesting] = useState(false);
 
-  const banners = useQuery({
-    queryKey: ["banners"],
-    queryFn: () => api<Collection<Banner>>("portal/banners").then((response) => response.data),
-  });
+  const banners = useQuery({ queryKey: ["banners"], queryFn: fetchBanners, select: (response) => response.data });
+  const sizes = useQuery({ queryKey: ["banners"], queryFn: fetchBanners, select: (response) => response.meta?.sizes ?? {} });
 
   const withdraw = useMutation({
     mutationFn: (banner: Banner) => api(`portal/banners/${banner.id}`, { method: "DELETE" }),
@@ -295,7 +331,7 @@ function BannersContent() {
         {banners.isError && <Alert type="error" showIcon style={{ marginTop: 16 }} title="Could not load your banners" description={errorMessage(banners.error)} />}
       </Card>
 
-      {requesting && <RequestBannerModal onClose={() => setRequesting(false)} onQuotaExceeded={goBuy} />}
+      {requesting && <RequestBannerModal sizes={sizes.data ?? {}} onClose={() => setRequesting(false)} onQuotaExceeded={goBuy} />}
     </>
   );
 }

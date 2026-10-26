@@ -709,6 +709,9 @@ export type BannerPlacement =
   | "wanted_sidebar";
 export type BannerStatus = "pending" | "active" | "paused" | "rejected";
 
+/** Display size in pixels of a banner slot, set by admins. */
+export type BannerSize = { width: number; height: number };
+
 export type Banner = {
   id: number;
   title: string;
