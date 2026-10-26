@@ -4,6 +4,7 @@ import { BuildOutlined, PlusOutlined, UploadOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Alert, App, Avatar, Button, Card, Col, Flex, Form, Input, InputNumber, Row, Select, Switch, Tabs, Typography, Upload, type FormInstance } from "antd";
 import { useState } from "react";
+import { ALT_TEXT_EXTRA, ALT_TEXT_MAX } from "@/components/alt-text-modal";
 import { htmlText } from "@/components/listing-form";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { IconSelect, RepeaterCard, SectionImage, moveProps } from "@/components/section-fields";
@@ -108,6 +109,8 @@ const REGISTRATION_FIELDS: { name: keyof DeveloperFormValues; label: string; pla
 
 /** Text fields sent as null when left empty, so the API stores nothing rather than "". */
 const OPTIONAL_TEXT: (keyof DeveloperFormValues)[] = [
+  "logo_alt",
+  "cover_alt",
   "tagline",
   "short_description",
   "registration_number",
@@ -174,6 +177,9 @@ export type DeveloperFormValues = {
 
   meta_title?: string | null;
   meta_description?: string | null;
+
+  logo_alt?: string | null;
+  cover_alt?: string | null;
 };
 
 export const EMPTY_DEVELOPER: Partial<DeveloperFormValues> = {
@@ -235,6 +241,9 @@ export function developerToFormValues(developer: Developer): DeveloperFormValues
 
     meta_title: developer.meta_title,
     meta_description: developer.meta_description,
+
+    logo_alt: developer.logo_alt ?? null,
+    cover_alt: developer.cover_alt ?? null,
   };
 }
 
@@ -291,6 +300,7 @@ function ImageUpload({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const url = type === "logo" ? developer?.logo_url : developer?.cover_url;
+  const alt = (type === "logo" ? developer?.logo_alt || `${developer?.name ?? "Company"} logo` : developer?.cover_alt) ?? "";
 
   const upload = async (file: File) => {
     if (!developer) {
@@ -317,10 +327,10 @@ function ImageUpload({
     <Flex vertical gap={10}>
       {type === "cover" && url ? (
         // eslint-disable-next-line @next/next/no-img-element -- a preview of an uploaded file on the API's storage
-        <img src={sizedImage(url, "medium")} alt="" style={{ width: "100%", aspectRatio: "3 / 1", objectFit: "cover", borderRadius: 8 }} />
+        <img src={sizedImage(url, "medium")} alt={alt} style={{ width: "100%", aspectRatio: "3 / 1", objectFit: "cover", borderRadius: 8 }} />
       ) : null}
       <Flex align="center" gap={14}>
-        {type === "logo" && <Avatar shape="square" size={72} src={sizedImage(url, "thumbnail") ?? undefined} icon={<BuildOutlined />} style={{ background: url ? "#fff" : undefined }} />}
+        {type === "logo" && <Avatar shape="square" size={72} src={sizedImage(url, "thumbnail") ?? undefined} alt={alt} icon={<BuildOutlined />} style={{ background: url ? "#fff" : undefined }} />}
         <Upload
           accept="image/png,image/jpeg,image/webp"
           showUploadList={false}
@@ -345,6 +355,9 @@ function ImageUpload({
         {developer ? hint : "Save your company details first, then upload images."}
       </Typography.Text>
       {error && <Alert type="error" showIcon title={error} />}
+      <Form.Item name={`${type}_alt`} label={`${label} alt text`} extra={`${ALT_TEXT_EXTRA} Saved with the company page.`} rules={[{ max: ALT_TEXT_MAX }]} style={{ marginBottom: 0 }}>
+        <Input maxLength={ALT_TEXT_MAX} showCount placeholder={type === "logo" ? "e.g. Acme Builders logo" : "e.g. Acme Heights towers at dusk"} />
+      </Form.Item>
     </Flex>
   );
 }

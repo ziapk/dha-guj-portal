@@ -4,6 +4,7 @@ import { ExportOutlined, UploadOutlined, UserOutlined } from "@ant-design/icons"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, App, Avatar, Button, Card, Col, Flex, Form, Input, InputNumber, Row, Select, Skeleton, Tag, Typography, Upload } from "antd";
 import { useState } from "react";
+import { ALT_TEXT_EXTRA, ALT_TEXT_MAX } from "@/components/alt-text-modal";
 import { PageHeader } from "@/components/page-header";
 import { api, apiUpload } from "@/lib/api-client";
 import { applyFormErrors, errorMessage } from "@/lib/form-errors";
@@ -33,6 +34,7 @@ type AgentProfileValues = {
   youtube: string | null;
   tiktok: string | null;
   website: string | null;
+  photo_alt: string | null;
 };
 
 /** Starting points for the expertise picker; agents can type their own as well. */
@@ -121,36 +123,38 @@ function AgentProfileForm({ response }: { response: AgentProfileResponse }) {
     },
   });
 
+  // The form spans both columns so the photo's alt text saves with the details.
   return (
-    <Row gutter={[16, 16]}>
-      <Col xs={24} lg={16}>
-        <Form
-          form={form}
-          layout="vertical"
-          requiredMark={false}
-          initialValues={{
-            name: profile.name,
-            designation: profile.designation,
-            short_bio: profile.short_bio,
-            bio: profile.bio ?? null,
-            experience_years: profile.experience_years,
-            specialisation: profile.specialisation,
-            areas_of_expertise: profile.areas_of_expertise ?? [],
-            languages: profile.languages,
-            city_id: profile.city?.id ?? null,
-            phone: profile.phone,
-            whatsapp: profile.whatsapp,
-            email: profile.email,
-            facebook: profile.facebook,
-            instagram: profile.instagram,
-            linkedin: profile.linkedin,
-            x: profile.x,
-            youtube: profile.youtube,
-            tiktok: profile.tiktok,
-            website: profile.website,
-          }}
-          onFinish={(values) => save.mutate(values)}
-        >
+    <Form
+      form={form}
+      layout="vertical"
+      requiredMark={false}
+      initialValues={{
+        name: profile.name,
+        designation: profile.designation,
+        short_bio: profile.short_bio,
+        bio: profile.bio ?? null,
+        experience_years: profile.experience_years,
+        specialisation: profile.specialisation,
+        areas_of_expertise: profile.areas_of_expertise ?? [],
+        languages: profile.languages,
+        city_id: profile.city?.id ?? null,
+        phone: profile.phone,
+        whatsapp: profile.whatsapp,
+        email: profile.email,
+        facebook: profile.facebook,
+        instagram: profile.instagram,
+        linkedin: profile.linkedin,
+        x: profile.x,
+        youtube: profile.youtube,
+        tiktok: profile.tiktok,
+        website: profile.website,
+        photo_alt: profile.photo_alt ?? null,
+      }}
+      onFinish={(values) => save.mutate(values)}
+    >
+      <Row gutter={[16, 16]}>
+        <Col xs={24} lg={16}>
           <Card title="Basic information" style={{ marginBottom: 16 }}>
             <Row gutter={12}>
               <Col xs={24} md={14}>
@@ -253,63 +257,66 @@ function AgentProfileForm({ response }: { response: AgentProfileResponse }) {
           <Button type="primary" htmlType="submit" loading={save.isPending}>
             {profile.id ? "Save changes" : "Create my agent page"}
           </Button>
-        </Form>
-      </Col>
+        </Col>
 
-      <Col xs={24} lg={8}>
-        <Flex vertical gap={16}>
-          <Card title="Profile photo">
-            <Flex align="center" gap={16}>
-              <Avatar size={80} src={sizedImage(profile.photo_url, "thumbnail") ?? undefined} icon={<UserOutlined />} />
-              <Upload
-                accept="image/png,image/jpeg,image/webp"
-                showUploadList={false}
-                disabled={!profile.id || uploading}
-                beforeUpload={(file) => {
-                  if (file.size > MAX_PHOTO_MB * 1024 * 1024) {
-                    message.error(`The photo must be ${MAX_PHOTO_MB} MB or smaller.`);
-                    return Upload.LIST_IGNORE;
-                  }
+        <Col xs={24} lg={8}>
+          <Flex vertical gap={16}>
+            <Card title="Profile photo">
+              <Flex align="center" gap={16}>
+                <Avatar size={80} src={sizedImage(profile.photo_url, "thumbnail") ?? undefined} alt={profile.photo_alt || profile.name} icon={<UserOutlined />} />
+                <Upload
+                  accept="image/png,image/jpeg,image/webp"
+                  showUploadList={false}
+                  disabled={!profile.id || uploading}
+                  beforeUpload={(file) => {
+                    if (file.size > MAX_PHOTO_MB * 1024 * 1024) {
+                      message.error(`The photo must be ${MAX_PHOTO_MB} MB or smaller.`);
+                      return Upload.LIST_IGNORE;
+                    }
 
-                  return true;
-                }}
-                customRequest={({ file, onSuccess, onError }) => {
-                  const formData = new FormData();
-                  formData.append("image", file as Blob);
-                  setUploading(true);
+                    return true;
+                  }}
+                  customRequest={({ file, onSuccess, onError }) => {
+                    const formData = new FormData();
+                    formData.append("image", file as Blob);
+                    setUploading(true);
 
-                  apiUpload<Resource<AgentProfile>>("portal/agent-profile/photo", formData)
-                    .then((result) => {
-                      queryClient.setQueryData<AgentProfileResponse>(["agent-profile"], (old) => (old ? { ...old, data: result.data } : old));
-                      message.success("Photo updated");
-                      onSuccess?.(result);
-                    })
-                    .catch((error: Error) => {
-                      message.error(errorMessage(error));
-                      onError?.(error);
-                    })
-                    .finally(() => setUploading(false));
-                }}
-              >
-                <Button icon={<UploadOutlined />} loading={uploading} disabled={!profile.id}>
-                  {profile.photo_url ? "Replace photo" : "Upload photo"}
-                </Button>
-              </Upload>
-            </Flex>
-            <Typography.Paragraph type="secondary" style={{ margin: "12px 0 0", fontSize: 12 }}>
-              {profile.id ? `A square head-and-shoulders photo works best. JPG, PNG or WebP, up to ${MAX_PHOTO_MB} MB.` : "Save your details first."}
-            </Typography.Paragraph>
-          </Card>
+                    apiUpload<Resource<AgentProfile>>("portal/agent-profile/photo", formData)
+                      .then((result) => {
+                        queryClient.setQueryData<AgentProfileResponse>(["agent-profile"], (old) => (old ? { ...old, data: result.data } : old));
+                        message.success("Photo updated");
+                        onSuccess?.(result);
+                      })
+                      .catch((error: Error) => {
+                        message.error(errorMessage(error));
+                        onError?.(error);
+                      })
+                      .finally(() => setUploading(false));
+                  }}
+                >
+                  <Button icon={<UploadOutlined />} loading={uploading} disabled={!profile.id}>
+                    {profile.photo_url ? "Replace photo" : "Upload photo"}
+                  </Button>
+                </Upload>
+              </Flex>
+              <Typography.Paragraph type="secondary" style={{ margin: "12px 0 0", fontSize: 12 }}>
+                {profile.id ? `A square head-and-shoulders photo works best. JPG, PNG or WebP, up to ${MAX_PHOTO_MB} MB.` : "Save your details first."}
+              </Typography.Paragraph>
+              <Form.Item name="photo_alt" label="Photo alt text" extra={`${ALT_TEXT_EXTRA} Saved with Save changes.`} rules={[{ max: ALT_TEXT_MAX }]} style={{ margin: "16px 0 0" }}>
+                <Input maxLength={ALT_TEXT_MAX} showCount placeholder={`e.g. ${profile.name || "Agent"}, property consultant`} />
+              </Form.Item>
+            </Card>
 
-          <Card
-            title="Public page"
-            extra={profile.id && <Tag color={PROFILE_STATUS_COLORS[profile.status]}>{PROFILE_STATUS_LABELS[profile.status]}</Tag>}
-          >
-            <StatusCard response={response} />
-          </Card>
-        </Flex>
-      </Col>
-    </Row>
+            <Card
+              title="Public page"
+              extra={profile.id && <Tag color={PROFILE_STATUS_COLORS[profile.status]}>{PROFILE_STATUS_LABELS[profile.status]}</Tag>}
+            >
+              <StatusCard response={response} />
+            </Card>
+          </Flex>
+        </Col>
+      </Row>
+    </Form>
   );
 }
 

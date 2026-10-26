@@ -220,21 +220,25 @@ export function PriceInput({ value, onChange, disabled, placeholder = "e.g. 1.5"
   );
 }
 
-export type SortableThumb = { key: string | number; src?: string; alt: string; badge?: ReactNode };
+/** altText is the photo's saved alt text; it is only read when onEditAlt is given to SortableThumbs. */
+export type SortableThumb = { key: string | number; src?: string; alt: string; altText?: string | null; badge?: ReactNode };
 
 /**
  * Photo thumbnails that can be dragged into a new order (arrow buttons do the same on touch screens and for
  * keyboard users). The first one is the cover; the order is the gallery order on the property page.
+ * With onEditAlt, each photo gets an Alt button, flagged when the photo has no alt text yet.
  */
 export function SortableThumbs({
   items,
   onReorder,
   onRemove,
+  onEditAlt,
   disabled,
 }: {
   items: SortableThumb[];
   onReorder: (keys: SortableThumb["key"][]) => void;
   onRemove?: (key: SortableThumb["key"]) => void;
+  onEditAlt?: (key: SortableThumb["key"]) => void;
   disabled?: boolean;
 }) {
   const [dragging, setDragging] = useState<number | null>(null);
@@ -288,6 +292,18 @@ export function SortableThumbs({
           <img src={item.src} alt={item.alt} draggable={false} />
           {index === 0 ? <span className="lf-thumb-cover">Cover</span> : <span className="lf-thumb-cover lf-thumb-index">{index + 1}</span>}
           {item.badge}
+          {onEditAlt && (
+            <button
+              type="button"
+              className={`lf-thumb-alt${item.altText?.trim() ? "" : " missing"}`}
+              aria-label={item.altText?.trim() ? `Edit alt text: ${item.altText}` : `Add alt text for photo ${index + 1} (missing)`}
+              title={item.altText?.trim() || "No alt text yet"}
+              disabled={disabled}
+              onClick={() => onEditAlt(item.key)}
+            >
+              Alt
+            </button>
+          )}
           {!disabled && (
             <>
               <HolderOutlined className="lf-thumb-grip" aria-hidden />

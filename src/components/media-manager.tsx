@@ -7,6 +7,7 @@ import { useState } from "react";
 import { api, apiUpload } from "@/lib/api-client";
 import { errorMessage } from "@/lib/form-errors";
 import { thumbnailUrl } from "@/lib/media";
+import { MediaAltTextModal } from "@/components/alt-text-modal";
 import { SortableThumbs, VideoLinkInput } from "@/components/listing-inputs";
 import type { Collection, Project, ProjectMedia, Property, PropertyMedia, Resource } from "@/types/api";
 
@@ -46,6 +47,7 @@ function PhotoAndVideoManager({
   const { message, modal } = App.useApp();
   const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(0);
+  const [altFor, setAltFor] = useState<number | null>(null);
 
   const photos = media.filter((item) => item.type === "image");
   const videos = media.filter((item) => item.type === "video");
@@ -94,8 +96,9 @@ function PhotoAndVideoManager({
         <>
           <SortableThumbs
             disabled={disabled || reorder.isPending}
-            items={photos.map((photo) => ({ key: photo.id, src: thumbnailUrl(photo), alt: "Photo" }))}
+            items={photos.map((photo) => ({ key: photo.id, src: thumbnailUrl(photo), alt: photo.alt_text || "Photo", altText: photo.alt_text }))}
             onReorder={(keys) => reorder.mutate(keys.map(Number))}
+            onEditAlt={(key) => setAltFor(Number(key))}
             onRemove={(key) => {
               const photo = photos.find((item) => item.id === key);
 
@@ -106,9 +109,17 @@ function PhotoAndVideoManager({
           />
           {!disabled && (
             <Typography.Paragraph type="secondary" style={{ margin: "8px 0 0", fontSize: 12 }}>
-              <DragOutlined /> Drag photos (or use the arrows) to change their order. The first photo is the cover, and this order is the gallery on the website.
+              <DragOutlined /> Drag photos (or use the arrows) to change their order. The first photo is the cover, and this order is the gallery on the website. Use Alt to describe each photo.
             </Typography.Paragraph>
           )}
+          <MediaAltTextModal
+            endpoint={endpoint}
+            media={photos.find((photo) => photo.id === altFor) ?? null}
+            onClose={() => setAltFor(null)}
+            onSaved={(saved) =>
+              queryClient.setQueryData<{ media?: Media[] }>(queryKey, (current) => (current ? { ...current, media: current.media?.map((item) => (item.id === saved.id ? { ...item, alt_text: saved.alt_text } : item)) } : current))
+            }
+          />
         </>
       )}
 

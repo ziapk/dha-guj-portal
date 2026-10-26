@@ -4,6 +4,7 @@ import { DeleteOutlined, FilePdfOutlined, PictureOutlined, PlusOutlined, StarFil
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { App, Button, Card, Empty, Flex, Image, Input, Popconfirm, Tag, Typography, Upload } from "antd";
 import { useState } from "react";
+import { MediaAltTextModal } from "@/components/alt-text-modal";
 import { api, apiUpload } from "@/lib/api-client";
 import { errorMessage } from "@/lib/form-errors";
 import type { Project, ProjectMedia, ProjectMediaType, Resource } from "@/types/api";
@@ -23,6 +24,8 @@ export function ProjectMediaManager({ project, disabled }: { project: Project; d
   const queryClient = useQueryClient();
   const [videoUrl, setVideoUrl] = useState("");
   const [uploading, setUploading] = useState<Record<"image" | "brochure", number>>({ image: 0, brochure: 0 });
+  /** The photo whose alt text is being edited. */
+  const [altFor, setAltFor] = useState<number | null>(null);
 
   const media = project.media ?? [];
   const photos = media.filter((item) => item.type === "image");
@@ -92,7 +95,7 @@ export function ProjectMediaManager({ project, disabled }: { project: Project; d
         <div className="media-grid">
           {photos.map((photo) => (
             <div key={photo.id} className="media-tile">
-              <Image src={thumbnail(photo)} preview={{ src: medium(photo) }} alt="Project photo" />
+              <Image src={thumbnail(photo)} preview={{ src: medium(photo) }} alt={photo.alt_text || "Project photo"} />
               {photo.is_cover && (
                 <Tag className="media-cover-badge" color="gold" icon={<StarFilled />}>
                   Cover
@@ -100,6 +103,15 @@ export function ProjectMediaManager({ project, disabled }: { project: Project; d
               )}
               {!disabled && (
                 <div className="media-tile-actions">
+                  <Button
+                    size="small"
+                    aria-label={photo.alt_text ? "Edit alt text" : "Add alt text"}
+                    title={photo.alt_text || "No alt text yet"}
+                    style={photo.alt_text ? undefined : { color: "#d46b08", borderColor: "#d46b08" }}
+                    onClick={() => setAltFor(photo.id)}
+                  >
+                    Alt
+                  </Button>
                   <Popconfirm title="Remove this photo?" onConfirm={() => remove.mutate(photo)}>
                     <Button size="small" danger icon={<DeleteOutlined />} aria-label="Remove photo" />
                   </Popconfirm>
@@ -124,6 +136,16 @@ export function ProjectMediaManager({ project, disabled }: { project: Project; d
           )}
         </div>
       </Image.PreviewGroup>
+      <MediaAltTextModal
+        endpoint={`portal/projects/${project.id}/media`}
+        media={photos.find((photo) => photo.id === altFor) ?? null}
+        onClose={() => setAltFor(null)}
+        onSaved={(saved) =>
+          queryClient.setQueryData<Project>(["project", String(project.id)], (current) =>
+            current ? { ...current, media: current.media?.map((item) => (item.id === saved.id ? { ...item, alt_text: saved.alt_text } : item)) } : current,
+          )
+        }
+      />
 
       {photos.length === 0 && disabled && <Empty description="No photos" />}
 

@@ -289,7 +289,17 @@ export const BANNER_PLACEMENT_LABELS: Record<BannerPlacement, string> = {
   home_top: "Home page — top",
   search_top: "Search results — top",
   search_sidebar: "Search results — sidebar",
-  listing_sidebar: "Listing page — sidebar",
+  listing_sidebar: "Property page — sidebar",
+  projects_top: "Projects list — top",
+  project_sidebar: "Project page — sidebar",
+  agents_top: "Agents & dealers list — top",
+  agent_sidebar: "Agent & dealer profile — sidebar",
+  developers_top: "Developers list — top",
+  blog_top: "Blog — top",
+  blog_sidebar: "Blog article — sidebar",
+  maps_top: "Society maps — top",
+  rates_top: "File rates — top",
+  wanted_sidebar: "Wanted (buyer requirements) — sidebar",
 };
 
 export const BANNER_PLACEMENT_HINTS: Record<BannerPlacement, string> = {
@@ -297,6 +307,16 @@ export const BANNER_PLACEMENT_HINTS: Record<BannerPlacement, string> = {
   search_top: "Wide banner above the search results, seen by active buyers. Suggested size 1200 × 200 px.",
   search_sidebar: "Tall banner beside the search results on larger screens. Suggested size 300 × 600 px.",
   listing_sidebar: "Banner beside a property's details, where buyers decide to call. Suggested size 300 × 250 px.",
+  projects_top: "Wide banner on the projects list, seen by buyers comparing projects. Suggested size 1200 × 200 px.",
+  project_sidebar: "Banner beside a project's details and payment plans. Suggested size 300 × 250 px.",
+  agents_top: "Wide banner on the agents and dealers lists, seen by people looking for help to buy or sell. Suggested size 1200 × 200 px.",
+  agent_sidebar: "Banner on agent and dealer profile pages. Suggested size 300 × 250 px.",
+  developers_top: "Wide banner on the developers list. Suggested size 1200 × 200 px.",
+  blog_top: "Wide banner on the blog home, seen by readers of guides and market news. Suggested size 1200 × 200 px.",
+  blog_sidebar: "Banner beside blog articles, seen while people read. Suggested size 300 × 250 px.",
+  maps_top: "Wide banner on the society maps pages, seen by people checking plot locations. Suggested size 1200 × 200 px.",
+  rates_top: "Wide banner on the file rates page, seen by buyers checking today's prices. Suggested size 1200 × 200 px.",
+  wanted_sidebar: "Banner beside the buyer requirements list, seen by agents and sellers. Suggested size 300 × 250 px.",
 };
 
 export const BANNER_STATUS_LABELS: Record<BannerStatus, string> = {

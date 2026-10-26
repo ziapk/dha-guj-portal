@@ -2,7 +2,8 @@
 
 import { CheckOutlined, DeleteOutlined, PictureOutlined, VideoCameraOutlined } from "@ant-design/icons";
 import { App, Button, Flex, Typography, Upload, type UploadFile } from "antd";
-import type { Dispatch, SetStateAction } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
+import { AltTextModal } from "@/components/alt-text-modal";
 import { SortableThumbs, VideoLinkInput } from "@/components/listing-inputs";
 import { Field, QualityTip } from "@/components/listing-form";
 
@@ -10,7 +11,10 @@ const PHOTO_TARGET = 5;
 /** Matches the API default (listings.max_photo_size_kb). */
 const MAX_PHOTO_MB = 20;
 
-export type PendingMedia = { photos: UploadFile[]; videos: string[] };
+/** A picked photo; `altText` is sent as alt_text with its upload. */
+export type PendingPhoto = UploadFile & { altText?: string | null };
+
+export type PendingMedia = { photos: PendingPhoto[]; videos: string[] };
 
 /**
  * Photos and video links picked before the listing exists. Nothing is uploaded here:
@@ -29,6 +33,9 @@ export function ListingMediaPicker({
   subject?: "property" | "project";
 }) {
   const { message } = App.useApp();
+  const [altFor, setAltFor] = useState<string | null>(null);
+  const altPhoto = value.photos.find((photo) => photo.uid === altFor);
+
   return (
     <>
       <Field icon={<PictureOutlined />} label={`Upload images of your ${subject}`}>
@@ -73,13 +80,20 @@ export function ListingMediaPicker({
           <>
             <SortableThumbs
               disabled={disabled}
-              items={value.photos.map((photo) => ({ key: photo.uid, src: photo.thumbUrl, alt: photo.name }))}
+              items={value.photos.map((photo) => ({ key: photo.uid, src: photo.thumbUrl, alt: photo.altText || photo.name, altText: photo.altText }))}
               onReorder={(keys) => onChange((prev) => ({ ...prev, photos: keys.map((key) => prev.photos.find((photo) => photo.uid === key)!) }))}
               onRemove={(key) => onChange((prev) => ({ ...prev, photos: prev.photos.filter((photo) => photo.uid !== key) }))}
+              onEditAlt={(key) => setAltFor(String(key))}
             />
             <div className="lf-field-hint" style={{ marginTop: 8 }}>
-              Drag photos (or use the arrows) to set their order. It becomes the gallery order on the website.
+              Drag photos (or use the arrows) to set their order. It becomes the gallery order on the website. Use Alt to describe each photo.
             </div>
+            {/* Kept with the picked photo and uploaded with it once the draft is saved. */}
+            <AltTextModal
+              photo={altPhoto ? { src: altPhoto.thumbUrl, altText: altPhoto.altText } : null}
+              onClose={() => setAltFor(null)}
+              onSave={(altText) => onChange((prev) => ({ ...prev, photos: prev.photos.map((photo) => (photo.uid === altFor ? { ...photo, altText } : photo)) }))}
+            />
           </>
         )}
 

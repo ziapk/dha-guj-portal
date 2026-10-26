@@ -6,6 +6,7 @@ import { Alert, App, Avatar, Button, Card, Col, Flex, Form, Image, Input, InputN
 import Link from "next/link";
 import { useState } from "react";
 import { AgencyVerification } from "@/components/agency-verification";
+import { ALT_TEXT_EXTRA, ALT_TEXT_MAX } from "@/components/alt-text-modal";
 import { PageHeader } from "@/components/page-header";
 import { api, apiUpload } from "@/lib/api-client";
 import { applyFormErrors, errorMessage } from "@/lib/form-errors";
@@ -31,6 +32,8 @@ type AgencyValues = {
   youtube: string | null;
   tiktok: string | null;
   linkedin: string | null;
+  logo_alt: string | null;
+  cover_alt: string | null;
 };
 
 const SOCIAL_FIELDS = [
@@ -109,33 +112,36 @@ function AgencyForm({ response }: { response: AgencyResponse }) {
     },
   });
 
+  // The form spans both columns so the logo and cover alt text save with the details.
   return (
-    <Row gutter={[16, 16]}>
-      <Col xs={24} lg={16}>
-        <Card title="Agency details">
-          <Form
-            form={form}
-            layout="vertical"
-            requiredMark={false}
-            initialValues={{
-              name: profile.name,
-              city_id: profile.city?.id ?? null,
-              phone: profile.phone,
-              whatsapp: profile.whatsapp,
-              email: profile.email,
-              website: profile.website,
-              address: profile.address,
-              about: profile.about,
-              established_year: profile.established_year,
-              service_areas: profile.service_areas,
-              facebook: profile.facebook,
-              instagram: profile.instagram,
-              youtube: profile.youtube,
-              tiktok: profile.tiktok,
-              linkedin: profile.linkedin,
-            }}
-            onFinish={(values) => save.mutate(values)}
-          >
+    <Form
+      form={form}
+      layout="vertical"
+      requiredMark={false}
+      initialValues={{
+        name: profile.name,
+        city_id: profile.city?.id ?? null,
+        phone: profile.phone,
+        whatsapp: profile.whatsapp,
+        email: profile.email,
+        website: profile.website,
+        address: profile.address,
+        about: profile.about,
+        established_year: profile.established_year,
+        service_areas: profile.service_areas,
+        facebook: profile.facebook,
+        instagram: profile.instagram,
+        youtube: profile.youtube,
+        tiktok: profile.tiktok,
+        linkedin: profile.linkedin,
+        logo_alt: profile.logo_alt ?? null,
+        cover_alt: profile.cover_alt ?? null,
+      }}
+      onFinish={(values) => save.mutate(values)}
+    >
+      <Row gutter={[16, 16]}>
+        <Col xs={24} lg={16}>
+          <Card title="Agency details">
             <Row gutter={12}>
               <Col xs={24} md={14}>
                 <Form.Item name="name" label="Agency name" rules={[{ required: true }, { max: 150 }]}>
@@ -209,82 +215,88 @@ function AgencyForm({ response }: { response: AgencyResponse }) {
             <Button type="primary" htmlType="submit" loading={save.isPending}>
               {profile.id ? "Save changes" : "Create agency page"}
             </Button>
-          </Form>
-        </Card>
-      </Col>
-
-      <Col xs={24} lg={8}>
-        <Flex vertical gap={16}>
-          <Card title="Logo">
-            <Flex align="center" gap={16}>
-              <Avatar shape="square" size={80} src={sizedImage(profile.logo_url, "thumbnail") ?? undefined} icon={<ShopOutlined />} />
-              <ImageUpload field="logo" maxMb={20} label={profile.logo_url ? "Replace logo" : "Upload logo"} disabled={!profile.id} />
-            </Flex>
-            <Typography.Paragraph type="secondary" style={{ margin: "12px 0 0", fontSize: 12 }}>
-              {profile.id ? "Square PNG, JPG or WebP, up to 20 MB." : "Save your agency details first."}
-            </Typography.Paragraph>
           </Card>
+        </Col>
 
-          <Card title="Cover photo">
-            {profile.cover_url && (
-              <Image src={sizedImage(profile.cover_url, "medium")} preview={{ src: profile.cover_url }} alt="Agency cover" width="100%" style={{ aspectRatio: "3 / 1", objectFit: "cover", borderRadius: 8, marginBottom: 12 }} />
-            )}
-            <ImageUpload field="cover" maxMb={20} label={profile.cover_url ? "Replace cover photo" : "Upload cover photo"} disabled={!profile.id} />
-            <Typography.Paragraph type="secondary" style={{ margin: "12px 0 0", fontSize: 12 }}>
-              {profile.id ? "Wide photo behind your page header, e.g. 1600×600. JPG, PNG or WebP, up to 20 MB." : "Save your agency details first."}
-            </Typography.Paragraph>
-          </Card>
-
-          <Card title="Public page" extra={profile.id && <Tag color={PROFILE_STATUS_COLORS[profile.status]}>{PROFILE_STATUS_LABELS[profile.status]}</Tag>}>
-            {!profile.id ? (
-              <Alert type="info" showIcon title="Not created yet" description="Save your details to create your agency page." />
-            ) : response.is_listed ? (
-              <Flex vertical gap={12}>
-                <Alert type="success" showIcon title="Your agency page is live" description="Buyers can find your agency, your agents and all your live listings." />
-                {response.public_url && (
-                  <Button block icon={<ExportOutlined />} href={response.public_url} target="_blank" rel="noopener noreferrer">
-                    View public page
-                  </Button>
-                )}
+        <Col xs={24} lg={8}>
+          <Flex vertical gap={16}>
+            <Card title="Logo">
+              <Flex align="center" gap={16}>
+                <Avatar shape="square" size={80} src={sizedImage(profile.logo_url, "thumbnail") ?? undefined} alt={profile.logo_alt || `${profile.name} logo`} icon={<ShopOutlined />} />
+                <ImageUpload field="logo" maxMb={20} label={profile.logo_url ? "Replace logo" : "Upload logo"} disabled={!profile.id} />
               </Flex>
-            ) : profile.status !== "approved" ? (
-              <Alert
-                type={profile.status === "pending" ? "info" : "warning"}
-                showIcon
-                title={profile.status === "pending" ? "Waiting for admin approval" : `${PROFILE_STATUS_LABELS[profile.status]} — not on the website`}
-                description={
-                  profile.rejection_reason ??
-                  (profile.status === "pending"
-                    ? "An admin checks every new agency page before it appears on the website. You will see it here once it is approved."
-                    : "Contact support if you think this is a mistake.")
-                }
-              />
-            ) : (
-              <Alert
-                type="warning"
-                showIcon
-                title="Hidden from the website"
-                description={
-                  <>
-                    Your current plan does not include an agency page. <Link href="/plan">See plans</Link>
-                  </>
-                }
-              />
-            )}
+              <Typography.Paragraph type="secondary" style={{ margin: "12px 0 0", fontSize: 12 }}>
+                {profile.id ? "Square PNG, JPG or WebP, up to 20 MB." : "Save your agency details first."}
+              </Typography.Paragraph>
+              <Form.Item name="logo_alt" label="Logo alt text" extra={`${ALT_TEXT_EXTRA} Saved with Save changes.`} rules={[{ max: ALT_TEXT_MAX }]} style={{ margin: "16px 0 0" }}>
+                <Input maxLength={ALT_TEXT_MAX} showCount placeholder={`e.g. ${profile.name || "Agency"} logo`} />
+              </Form.Item>
+            </Card>
 
-            <div style={{ marginTop: 16 }}>
-              {profile.is_verified ? (
-                <Tag color="green" icon={<SafetyCertificateFilled />}>
-                  Verified agency
-                </Tag>
-              ) : (
-                <Typography.Text type="secondary">Not verified yet. Upload your documents below and request verification.</Typography.Text>
+            <Card title="Cover photo">
+              {profile.cover_url && (
+                <Image src={sizedImage(profile.cover_url, "medium")} preview={{ src: profile.cover_url }} alt={profile.cover_alt || "Agency cover"} width="100%" style={{ aspectRatio: "3 / 1", objectFit: "cover", borderRadius: 8, marginBottom: 12 }} />
               )}
-            </div>
-          </Card>
-        </Flex>
-      </Col>
-    </Row>
+              <ImageUpload field="cover" maxMb={20} label={profile.cover_url ? "Replace cover photo" : "Upload cover photo"} disabled={!profile.id} />
+              <Typography.Paragraph type="secondary" style={{ margin: "12px 0 0", fontSize: 12 }}>
+                {profile.id ? "Wide photo behind your page header, e.g. 1600×600. JPG, PNG or WebP, up to 20 MB." : "Save your agency details first."}
+              </Typography.Paragraph>
+              <Form.Item name="cover_alt" label="Cover alt text" extra={`${ALT_TEXT_EXTRA} Saved with Save changes.`} rules={[{ max: ALT_TEXT_MAX }]} style={{ margin: "16px 0 0" }}>
+                <Input maxLength={ALT_TEXT_MAX} showCount placeholder="e.g. Our office front on the main boulevard" />
+              </Form.Item>
+            </Card>
+
+            <Card title="Public page" extra={profile.id && <Tag color={PROFILE_STATUS_COLORS[profile.status]}>{PROFILE_STATUS_LABELS[profile.status]}</Tag>}>
+              {!profile.id ? (
+                <Alert type="info" showIcon title="Not created yet" description="Save your details to create your agency page." />
+              ) : response.is_listed ? (
+                <Flex vertical gap={12}>
+                  <Alert type="success" showIcon title="Your agency page is live" description="Buyers can find your agency, your agents and all your live listings." />
+                  {response.public_url && (
+                    <Button block icon={<ExportOutlined />} href={response.public_url} target="_blank" rel="noopener noreferrer">
+                      View public page
+                    </Button>
+                  )}
+                </Flex>
+              ) : profile.status !== "approved" ? (
+                <Alert
+                  type={profile.status === "pending" ? "info" : "warning"}
+                  showIcon
+                  title={profile.status === "pending" ? "Waiting for admin approval" : `${PROFILE_STATUS_LABELS[profile.status]} — not on the website`}
+                  description={
+                    profile.rejection_reason ??
+                    (profile.status === "pending"
+                      ? "An admin checks every new agency page before it appears on the website. You will see it here once it is approved."
+                      : "Contact support if you think this is a mistake.")
+                  }
+                />
+              ) : (
+                <Alert
+                  type="warning"
+                  showIcon
+                  title="Hidden from the website"
+                  description={
+                    <>
+                      Your current plan does not include an agency page. <Link href="/plan">See plans</Link>
+                    </>
+                  }
+                />
+              )}
+
+              <div style={{ marginTop: 16 }}>
+                {profile.is_verified ? (
+                  <Tag color="green" icon={<SafetyCertificateFilled />}>
+                    Verified agency
+                  </Tag>
+                ) : (
+                  <Typography.Text type="secondary">Not verified yet. Upload your documents below and request verification.</Typography.Text>
+                )}
+              </div>
+            </Card>
+          </Flex>
+        </Col>
+      </Row>
+    </Form>
   );
 }
 

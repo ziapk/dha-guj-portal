@@ -21,6 +21,10 @@ async function uploadPendingMedia(propertyId: number, media: PendingMedia): Prom
     formData.append("type", "image");
     formData.append("file", photo.originFileObj as Blob);
 
+    if (photo.altText) {
+      formData.append("alt_text", photo.altText);
+    }
+
     try {
       await apiUpload<Resource<PropertyMedia>>(`portal/properties/${propertyId}/media`, formData);
     } catch {

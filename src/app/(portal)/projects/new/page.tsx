@@ -22,6 +22,10 @@ async function uploadPendingMedia(projectId: number, media: PendingMedia): Promi
     formData.append("type", "image");
     formData.append("file", photo.originFileObj as Blob);
 
+    if (photo.altText) {
+      formData.append("alt_text", photo.altText);
+    }
+
     try {
       await apiUpload<Resource<ProjectMedia>>(`portal/projects/${projectId}/media`, formData);
     } catch {

@@ -182,6 +182,8 @@ export type PropertyMedia = {
   thumbnail_url?: string | null;
   /** ≈1280px WebP for larger previews; the original until the background job has run. */
   medium_url?: string | null;
+  /** Describes the photo for screen readers and search engines; null lets the website write its own. */
+  alt_text?: string | null;
   sort_order: number;
   is_cover: boolean;
 };
@@ -340,6 +342,8 @@ export type ProjectMedia = {
   /** ≈1280px WebP for photos; null for videos and brochures. */
   medium_url: string | null;
   original_name: string | null;
+  /** Photos only; null lets the website write its own. */
+  alt_text?: string | null;
   sort_order: number;
   is_cover: boolean;
 };
@@ -425,6 +429,10 @@ export type Project = {
   floor_plans?: ProjectFloorPlan[];
   media?: ProjectMedia[];
   cover_url?: string | null;
+  cover_alt?: string | null;
+  logo_alt?: string | null;
+  master_plan_image_url?: string | null;
+  master_plan_image_alt?: string | null;
 
   sales_office_name?: string | null;
   contact_name: string | null;
@@ -537,7 +545,9 @@ export type AgencyProfile = {
   established_year: number | null;
   service_areas: string | null;
   logo_url: string | null;
+  logo_alt?: string | null;
   cover_url: string | null;
+  cover_alt?: string | null;
   phone: string | null;
   whatsapp: string | null;
   email: string | null;
@@ -567,6 +577,7 @@ export type AgentProfile = {
   bio?: string;
   bio_html?: string;
   photo_url: string | null;
+  photo_alt?: string | null;
   experience_years: number | null;
   specialisation: string | null;
   areas_of_expertise: string[];
@@ -681,7 +692,21 @@ export type WantedPost = {
   created_at: string;
 };
 
-export type BannerPlacement = "home_top" | "search_top" | "search_sidebar" | "listing_sidebar";
+export type BannerPlacement =
+  | "home_top"
+  | "search_top"
+  | "search_sidebar"
+  | "listing_sidebar"
+  | "projects_top"
+  | "project_sidebar"
+  | "agents_top"
+  | "agent_sidebar"
+  | "developers_top"
+  | "blog_top"
+  | "blog_sidebar"
+  | "maps_top"
+  | "rates_top"
+  | "wanted_sidebar";
 export type BannerStatus = "pending" | "active" | "paused" | "rejected";
 
 export type Banner = {
@@ -756,7 +781,9 @@ export type Developer = {
   gallery?: DeveloperGalleryItem[];
   faqs?: DeveloperFaq[];
   logo_url: string | null;
+  logo_alt?: string | null;
   cover_url: string | null;
+  cover_alt?: string | null;
 
   established_year: number | null;
   registration_number: string | null;
